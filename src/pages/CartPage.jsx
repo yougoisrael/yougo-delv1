@@ -4,13 +4,13 @@
 import { useState, useEffect } from "react";
 import GuestBanner from "../components/GuestBanner";
 import { useNavigate } from "react-router-dom";
-import { C, IcoBack, IcoPlus, IcoMinus, IcoClose, IcoCheck, IcoShield, IcoPin, IcoCash, IcoCreditCard, IcoBit } from "../components/Icons";
+import { C, IcoBack, IcoPlus, IcoMinus, IcoClose, IcoCheck, IcoShield, IcoPin, IcoCash, IcoCreditCard } from "../components/Icons";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
 
 const FREE_DELIVERY_MIN = 150;
 const PROMO_CODES = { "NAAT10": 0.10 };
-const PAYMENT_MAP = { cash: "كاش", card: "بطاقة", bit: "Apple Pay" };
+const PAYMENT_MAP = { cash: "מזומן", card: "אשראי", paypal: "PayPal", googlepay: "Google Pay", applepay: "Apple Pay" };
 
 // Tracking steps
 const STEPS = [
@@ -269,10 +269,10 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
         <div style={{ background: "white", borderRadius: 16, padding: "16px", marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: C.dark, marginBottom: 10 }}>אמצעי תשלום</div>
           <div style={{ display: "flex", gap: 8 }}>
-            {[{ v: "cash", l: "מזומן", Ico: IcoCash }, { v: "card", l: "כרטיס", Ico: IcoCreditCard }, { v: "bit", l: "ביט", Ico: IcoBit }].map(p => (
+            {[{ v: "cash", l: "מזומן", Ico: IcoCash }, { v: "card", l: "אשראי", Ico: IcoCreditCard }, { v: "paypal", l: "PayPal", e: "🅿️" }, { v: "googlepay", l: "Google", e: "G" }, { v: "applepay", l: "Apple Pay", e: "🍎" }].map(p => (
               <button key={p.v} onClick={() => setPayment(p.v)}
                 style={{ flex: 1, padding: "10px 6px", borderRadius: 12, border: "2px solid " + (payment === p.v ? C.red : C.lightGray), background: payment === p.v ? "rgba(200,16,46,0.06)" : "white", cursor: "pointer", fontSize: 12, fontWeight: payment === p.v ? 700 : 500, color: payment === p.v ? C.red : C.gray, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, fontFamily: "Arial,sans-serif" }}>
-                <p.Ico s={20} c={payment === p.v ? C.red : C.gray}/>{p.l}
+                {p.Ico ? <p.Ico s={20} c={payment === p.v ? C.red : C.gray}/> : <span style={{fontSize:16}}>{p.e}</span>}{p.l}
               </button>
             ))}
           </div>
