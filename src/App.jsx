@@ -51,7 +51,7 @@ export default function App() {
       else if (session?.user) {
         const u = session.user;
         const meta = u.user_metadata || {};
-        if (meta.firstName && !_event.includes('SIGN_OUT')) {
+        if (meta.firstName && _event !== 'SIGNED_OUT') {
           setUser({ id: u.id, email: u.email, name: meta.firstName + " " + meta.lastName, firstName: meta.firstName, phone: meta.phone || "", gender: meta.gender, age: meta.age });
           setAuthed(true);
           setGuest(false);
