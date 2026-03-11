@@ -12,48 +12,6 @@ import { supabase } from "./lib/supabase";
 const now = Date.now();
 const t = (m) => new Date(now - m * 60000).toISOString();
 
-const ORDERS = [
-  { id:"O-8821", customer:"حمدان أحمد",    phone:"054-698-0606", address:"رامة — شارع الجليل 12",  restaurant:"ورونا كريسبي",   items:["كريسبي كبير","بطاطا","كولا"], total:93,  fee:10, status:"جديد",         pay:"كاش",       created:t(2)   },
-  { id:"O-8820", customer:"محمد حمدان",    phone:"052-412-3456", address:"نحف — حي الزيتون 4",     restaurant:"ليمون فريش",     items:["عصير ليمون","سندويشة"],       total:56,  fee:8,  status:"في الطريق",   pay:"بطاقة",     created:t(14)  },
-  { id:"O-8819", customer:"أحمد محمود",    phone:"052-345-6789", address:"رامة — ش. الوادي 7",     restaurant:"والا كريسبي",    items:["شاورما","بيتزا صغيرة","مياه","حلويات"], total:148, fee:12, status:"قيد التحضير", pay:"بطاقة",     created:t(22)  },
-  { id:"O-8818", customer:"يوسف صالح",     phone:"052-654-3210", address:"شفاعمرو — ش. رئيسي 3",  restaurant:"ورونا كريسبي",   items:["كريسبي وسط","مياه"],          total:78,  fee:10, status:"مكتمل",        pay:"كاش",       created:t(41)  },
-  { id:"O-8817", customer:"رامي علي",      phone:"050-765-4321", address:"الناصرة — حي العمال",   restaurant:"بيبيروني بيتزا", items:["بيتزا L","كولا كبيرة"],       total:145, fee:12, status:"مكتمل",        pay:"Apple Pay", created:t(63)  },
-  { id:"O-8816", customer:"نادية قاسم",    phone:"050-876-5432", address:"رامة — حي الشمال 9",    restaurant:"ليمون فريش",     items:["عصير برتقال","معجنة"],         total:44,  fee:8,  status:"ملغي",         pay:"بطاقة",     created:t(78)  },
-  { id:"O-8815", customer:"سمير خليل",     phone:"054-567-8901", address:"نحف — ش. الجنوب 15",    restaurant:"والا كريسبي",    items:["شاورما دجاج","بطاطا مقلية"],  total:67,  fee:10, status:"مكتمل",        pay:"كاش",       created:t(95)  },
-  { id:"O-8814", customer:"ليلى عمر",      phone:"052-111-2233", address:"رامة — ش. البستان 2",   restaurant:"بيبيروني بيتزا", items:["بيتزا XL","مياه×2","تيراميسو","سلطة"], total:210, fee:12, status:"مكتمل", pay:"بطاقة",     created:t(112) },
-  { id:"O-8813", customer:"كريم ناصر",     phone:"050-333-4455", address:"الناصرة — ش. الحرية",   restaurant:"ورونا كريسبي",   items:["كريسبي كبير","مشروب"],        total:88,  fee:10, status:"مكتمل",        pay:"كاش",       created:t(130) },
-  { id:"O-8812", customer:"منى سالم",      phone:"054-222-3344", address:"شفاعمرو — حي الزهراء",  restaurant:"ليمون فريش",     items:["عصير تفاح"],                  total:39,  fee:8,  status:"ملغي",         pay:"بطاقة",     created:t(155) },
-  { id:"O-8811", customer:"خالد مصطفى",   phone:"052-444-5566", address:"رامة — ش. الرياض 5",    restaurant:"سوشي تايم",      items:["سيت 12 قطعة","ميسو"],         total:185, fee:15, status:"مكتمل",        pay:"Apple Pay", created:t(180) },
-  { id:"O-8810", customer:"سارة أحمد",     phone:"054-777-8899", address:"نحف — حي الورود 8",     restaurant:"ورونا كريسبي",   items:["كريسبي وسط×2","بطاطا"],       total:112, fee:10, status:"مكتمل",        pay:"بطاقة",     created:t(210) },
-  { id:"O-8809", customer:"عمر فارس",      phone:"050-555-6677", address:"الناصرة — ش. السلام",   restaurant:"بيبيروني بيتزا", items:["بيتزا M×2"],                  total:134, fee:12, status:"مكتمل",        pay:"كاش",       created:t(240) },
-  { id:"O-8808", customer:"ريم حسن",       phone:"052-888-9900", address:"رامة — ش. النور 11",    restaurant:"والا كريسبي",    items:["شاورما لحم","مشروب","حلويات"],total:98,  fee:10, status:"مكتمل",        pay:"بطاقة",     created:t(270) },
-  { id:"O-8807", customer:"جمال عيسى",    phone:"054-100-2003", address:"شفاعمرو — ش. الأمل",    restaurant:"سوشي تايم",      items:["رولز×8","سلمون"],             total:156, fee:15, status:"مكتمل",        pay:"Apple Pay", created:t(300) },
-];
-
-const RESTAURANTS = [
-  { id:"R01", name:"ورونا كريسبي",   cat:"دجاج مقلي",     city:"رامة",      phone:"04-901-1111", hours:"10:00–23:00", rating:4.8, reviews:1240, orders:847,  revenue:72340, active:true,  verified:true,  img:"🍗" },
-  { id:"R02", name:"ليمون فريش",     cat:"عصائر طازجة",   city:"الناصرة",   phone:"04-902-2222", hours:"08:00–00:00", rating:4.9, reviews:2100, orders:1420, revenue:58900, active:true,  verified:true,  img:"🍋" },
-  { id:"R03", name:"والا كريسبي",    cat:"شاورما",         city:"نحف",       phone:"04-903-3333", hours:"11:00–23:30", rating:4.7, reviews:890,  orders:612,  revenue:61200, active:true,  verified:true,  img:"🌯" },
-  { id:"R04", name:"بيبيروني بيتزا", cat:"بيتزا إيطالية", city:"رامة",      phone:"04-904-4444", hours:"12:00–23:00", rating:4.6, reviews:540,  orders:380,  revenue:49800, active:false, verified:true,  img:"🍕" },
-  { id:"R05", name:"سوشي تايم",      cat:"سوشي ياباني",   city:"الناصرة",   phone:"04-905-5555", hours:"12:00–22:00", rating:4.5, reviews:320,  orders:210,  revenue:37200, active:true,  verified:false, img:"🍣" },
-  { id:"R06", name:"برغر هاوس",      cat:"برغر",           city:"شفاعمرو",   phone:"04-906-6666", hours:"11:00–24:00", rating:4.4, reviews:410,  orders:290,  revenue:31500, active:true,  verified:false, img:"🍔" },
-];
-
-const USERS = [
-  { id:"U01", name:"حمدان أحمد",  phone:"054-698-0606", city:"رامة",    orders:14, spent:1240, joined:"15/08/2025", active:true,  lastOrder:t(2)   },
-  { id:"U02", name:"محمد حمدان", phone:"052-412-3456", city:"نحف",     orders:8,  spent:720,  joined:"20/09/2025", active:true,  lastOrder:t(14)  },
-  { id:"U03", name:"أحمد محمود", phone:"052-345-6789", city:"نحف",     orders:22, spent:2180, joined:"01/07/2025", active:true,  lastOrder:t(22)  },
-  { id:"U04", name:"يوسف صالح",  phone:"052-654-3210", city:"شفاعمرو", orders:5,  spent:380,  joined:"10/11/2025", active:false, lastOrder:t(41)  },
-  { id:"U05", name:"رامي علي",   phone:"050-765-4321", city:"الناصرة", orders:31, spent:3400, joined:"05/06/2025", active:true,  lastOrder:t(63)  },
-  { id:"U06", name:"نادية قاسم", phone:"050-876-5432", city:"رامة",    orders:12, spent:990,  joined:"22/10/2025", active:true,  lastOrder:t(78)  },
-  { id:"U07", name:"سمير خليل",  phone:"054-567-8901", city:"نحف",     orders:7,  spent:560,  joined:"14/12/2025", active:true,  lastOrder:t(95)  },
-  { id:"U08", name:"ليلى عمر",   phone:"052-111-2233", city:"رامة",    orders:19, spent:2100, joined:"03/08/2025", active:true,  lastOrder:t(112) },
-];
-
-const WEEKLY  = [420, 380, 510, 460, 590, 620, 480];
-const MONTHLY = [1800,2100,1650,2400,2800,3100,2700,3300,2900,3600,3200,3900];
-const W_LABELS = ["أحد","إثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];
-const M_LABELS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
 const ST = {
   "جديد":        { c:"#3B82F6", bg:"#EFF6FF", label:"جديد"        },
@@ -521,10 +479,10 @@ export default function AdminReal({ onBack }) {
       {/* KPI Row */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14 }}>
         {[
-          { label:"طلبات اليوم",      val:todayOrders.length, sub:`${pending} معلق`,  color:"#2563EB", spark:WEEKLY.slice(-5), trend:"+12%" },
-          { label:"إيرادات اليوم",    val:`₪${todayRev}`,    sub:"شيكل",            color:"#10B981", spark:MONTHLY.slice(-5), trend:"+8%"  },
-          { label:"طلبات مكتملة",     val:completedOrders.length, sub:`من ${orders.length}`,  color:"#8B5CF6", spark:WEEKLY.slice(-5), trend:"+5%"  },
-          { label:"إجمالي الإيرادات", val:`₪${totalRev.toLocaleString()}`, sub:"كل الوقت", color:"#F59E0B", spark:MONTHLY.slice(-5), trend:"+18%" },
+          { label:"طلبات اليوم",      val:todayOrders.length, sub:`${pending} معلق`,  color:"#2563EB", spark:[], trend:"+12%" },
+          { label:"إيرادات اليوم",    val:`₪${todayRev}`,    sub:"شيكل",            color:"#10B981", spark:[], trend:"+8%"  },
+          { label:"طلبات مكتملة",     val:completedOrders.length, sub:`من ${orders.length}`,  color:"#8B5CF6", spark:[], trend:"+5%"  },
+          { label:"إجمالي الإيرادات", val:`₪${totalRev.toLocaleString()}`, sub:"كل الوقت", color:"#F59E0B", spark:[], trend:"+18%" },
         ].map((c, i) => (
           <Card key={i} style={{ padding:"20px", position:"relative", overflow:"hidden", cursor:"default" }}>
             <div style={{ position:"absolute", top:0, left:0, right:0, height:3, background:`linear-gradient(90deg,${c.color}88,${c.color})` }}/>
@@ -550,13 +508,13 @@ export default function AdminReal({ onBack }) {
           <SectionHead title="الطلبات الأسبوعية" sub="آخر 7 أيام"
             action={<span style={{ background:"#EFF6FF", color:"#2563EB", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>هذا الأسبوع</span>}/>
           <div style={{ padding:"16px 22px 20px" }}>
-            <MiniBar data={WEEKLY} color="#2563EB" h={90}/>
+            <MiniBar data={[]} color="#2563EB" h={90}/>
             <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
               {W_LABELS.map((l, i) => <span key={i} style={{ flex:1, textAlign:"center", fontSize:9, color:"#94A3B8", fontWeight:500 }}>{l}</span>)}
             </div>
             <div style={{ marginTop:16, paddingTop:16, borderTop:"1px solid #F1F5F9", display:"flex", justifyContent:"space-between" }}>
-              <div><div style={{ fontSize:22, fontWeight:900, color:"#0F172A" }}>{WEEKLY.reduce((a,b)=>a+b)}</div><div style={{ fontSize:11, color:"#94A3B8" }}>إجمالي الأسبوع</div></div>
-              <div style={{ textAlign:"left" }}><div style={{ fontSize:22, fontWeight:900, color:"#10B981" }}>+{Math.round((WEEKLY[6]-WEEKLY[0])/WEEKLY[0]*100)}%</div><div style={{ fontSize:11, color:"#94A3B8" }}>نمو</div></div>
+              <div><div style={{ fontSize:22, fontWeight:900, color:"#0F172A" }}>{0}</div><div style={{ fontSize:11, color:"#94A3B8" }}>إجمالي الأسبوع</div></div>
+              <div style={{ textAlign:"left" }}><div style={{ fontSize:22, fontWeight:900, color:"#10B981" }}>+{0}%</div><div style={{ fontSize:11, color:"#94A3B8" }}>نمو</div></div>
             </div>
           </div>
         </Card>
@@ -566,13 +524,13 @@ export default function AdminReal({ onBack }) {
           <SectionHead title="الإيرادات الشهرية" sub="2026"
             action={<span style={{ background:"#F0FDF4", color:"#10B981", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>₪</span>}/>
           <div style={{ padding:"16px 22px 20px" }}>
-            <MiniBar data={MONTHLY} color="#10B981" h={90}/>
+            <MiniBar data={[]} color="#10B981" h={90}/>
             <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
               {M_LABELS.map((l, i) => <span key={i} style={{ flex:1, textAlign:"center", fontSize:8, color:"#94A3B8" }}>{l.slice(0,3)}</span>)}
             </div>
             <div style={{ marginTop:16, paddingTop:16, borderTop:"1px solid #F1F5F9", display:"flex", justifyContent:"space-between" }}>
-              <div><div style={{ fontSize:22, fontWeight:900, color:"#0F172A" }}>₪{MONTHLY.reduce((a,b)=>a+b).toLocaleString()}</div><div style={{ fontSize:11, color:"#94A3B8" }}>إجمالي 2026</div></div>
-              <div style={{ textAlign:"left" }}><div style={{ fontSize:22, fontWeight:900, color:"#2563EB" }}>₪{Math.round(MONTHLY.reduce((a,b)=>a+b)/12).toLocaleString()}</div><div style={{ fontSize:11, color:"#94A3B8" }}>معدل شهري</div></div>
+              <div><div style={{ fontSize:22, fontWeight:900, color:"#0F172A" }}>₪{0}</div><div style={{ fontSize:11, color:"#94A3B8" }}>إجمالي 2026</div></div>
+              <div style={{ textAlign:"left" }}><div style={{ fontSize:22, fontWeight:900, color:"#2563EB" }}>₪{0}</div><div style={{ fontSize:11, color:"#94A3B8" }}>معدل شهري</div></div>
             </div>
           </div>
         </Card>
@@ -1082,7 +1040,7 @@ export default function AdminReal({ onBack }) {
       <Card>
         <SectionHead title="الطلبات الأسبوعية" sub="آخر 7 أيام"/>
         <div style={{ padding:"16px 22px 22px" }}>
-          <MiniBar data={WEEKLY} color="#2563EB" h={120}/>
+          <MiniBar data={[]} color="#2563EB" h={120}/>
           <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
             {W_LABELS.map((l, i) => <span key={i} style={{ flex:1, textAlign:"center", fontSize:10, color:"#94A3B8" }}>{l}</span>)}
           </div>
@@ -1091,7 +1049,7 @@ export default function AdminReal({ onBack }) {
       <Card>
         <SectionHead title="الإيرادات الشهرية" sub="2026"/>
         <div style={{ padding:"16px 22px 22px" }}>
-          <MiniBar data={MONTHLY} color="#10B981" h={120}/>
+          <MiniBar data={[]} color="#10B981" h={120}/>
           <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
             {M_LABELS.map((l, i) => <span key={i} style={{ flex:1, textAlign:"center", fontSize:8, color:"#94A3B8" }}>{l.slice(0,3)}</span>)}
           </div>
