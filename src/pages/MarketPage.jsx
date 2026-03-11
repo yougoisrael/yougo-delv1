@@ -8,7 +8,8 @@ import { supabase } from "../lib/supabase";
 import {
   C, hexA,
   IcoSearch, IcoClose, IcoHome, IcoChevDown, IcoShield,
-  IcoStar, IcoPin, IcoFork, IcoStore,
+  IcoStar, IcoPin, IcoFork, IcoStore, IcoUser, IcoBack,
+  IcoPackage, IcoCreditCard, IcoUsers, IcoHelp, IcoLock,
 } from "../components/Icons";
 import BottomNav from "../components/BottomNav";
 
@@ -52,6 +53,7 @@ export default function MarketPage({ cartCount }) {
   }, []);
   const [mktCat, setMktCat] = useState("all");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
 
   var filtered = stores.filter(function(s) {
@@ -59,9 +61,50 @@ export default function MarketPage({ cartCount }) {
     return true;
   });
 
+
+  // ── Sidebar ──
+  const Sidebar = () => (
+    <>
+      <div onClick={() => setSidebarOpen(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", zIndex:200, opacity:sidebarOpen?1:0, pointerEvents:sidebarOpen?"all":"none", transition:"opacity 0.3s ease" }} />
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:300, maxWidth:"80vw", background:"white", zIndex:201, display:"flex", flexDirection:"column", transform:sidebarOpen?"translateX(0)":"translateX(100%)", transition:"transform 0.35s cubic-bezier(0.34,1.1,0.64,1)", boxShadow:"-8px 0 40px rgba(0,0,0,0.15)", overflowY:"auto" }}>
+        <div style={{ background:"linear-gradient(135deg,#C8102E,#7B0D1E)", padding:"48px 20px 24px", position:"relative" }}>
+          <button onClick={() => setSidebarOpen(false)} style={{ position:"absolute", top:14, left:14, background:"rgba(255,255,255,0.15)", border:"none", borderRadius:"50%", width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+            <IcoBack s={16} c="white" />
+          </button>
+          <div style={{ width:64, height:64, borderRadius:"50%", background:"rgba(255,255,255,0.15)", border:"2px solid rgba(255,255,255,0.3)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10 }}>
+            <IcoUser s={32} c="white" />
+          </div>
+          <div style={{ color:"white", fontSize:18, fontWeight:900 }}>אורח</div>
+        </div>
+        <div style={{ flex:1, padding:"12px 0" }}>
+          {[
+            { icon:<IcoUser s={20} c={C.red}/>, label:"הפרופיל שלי", path:"/profile" },
+            { icon:<IcoPackage s={20} c={C.red}/>, label:"ההזמנות שלי", path:"/orders" },
+            { icon:<IcoCreditCard s={20} c={C.red}/>, label:"אמצעי תשלום", path:"/cards" },
+            { icon:<IcoUsers s={20} c={C.red}/>, label:"הזמן חברים", path:"/invite" },
+            { icon:<IcoFork s={20} c={C.red}/>, label:"מסעדות", path:"/" },
+            { icon:<IcoHelp s={20} c="#6B7280"/>, label:"תמיכה", path:"/support" },
+            { icon:<IcoLock s={20} c="#6B7280"/>, label:"מדיניות פרטיות", path:"/privacy" },
+          ].map((item, i) => (
+            <button key={i} onClick={() => { navigate(item.path); setSidebarOpen(false); }} style={{ width:"100%", background:"none", border:"none", padding:"14px 20px", display:"flex", alignItems:"center", gap:14, cursor:"pointer", textAlign:"right", fontFamily:"Arial,sans-serif", borderBottom:"1px solid #F9FAFB" }}>
+              <div style={{ width:40, height:40, borderRadius:12, background:"rgba(200,16,46,0.07)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{item.icon}</div>
+              <span style={{ flex:1, fontSize:14, fontWeight:700, color:"#111827" }}>{item.label}</span>
+              <span style={{ color:"#D1D5DB", fontSize:16 }}>‹</span>
+            </button>
+          ))}
+        </div>
+        <div style={{ padding:"16px 20px 32px", borderTop:"1px solid #F3F4F6" }}>
+          <button onClick={() => { navigate("/admin"); setSidebarOpen(false); }} style={{ width:"100%", background:"linear-gradient(135deg,#111827,#1F2937)", color:"white", border:"none", borderRadius:16, padding:"14px", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10, fontFamily:"Arial,sans-serif" }}>
+            <IcoShield s={18} c="#F87171" /> ניהול המערכת
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <div className="page-enter" style={{ fontFamily: "Arial,sans-serif", background: C.bg, minHeight: "100vh", maxWidth: 430, margin: "0 auto", direction: "rtl", overflowX: "hidden", paddingBottom: 90 }}>
-
+      <Sidebar />
       {/* TOP BAR */}
       <div style={{ background: C.white, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
         {searchOpen ? (
@@ -88,9 +131,9 @@ export default function MarketPage({ cartCount }) {
               </div>
               <IcoChevDown />
             </div>
-            <button onClick={function() { navigate("/admin"); }}
-              style={{ background: C.red, color: "white", border: "none", borderRadius: 20, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, boxShadow: "0 2px 8px rgba(200,16,46,0.35)" }}>
-              <IcoShield s={13} /> ניהול
+            <button onClick={function() { setSidebarOpen(true); }}
+              style={{ background: C.bg, border: "none", borderRadius: 12, width: 38, height: 38, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#111827" strokeWidth="2" strokeLinecap="round"/></svg>
             </button>
           </>
         )}
