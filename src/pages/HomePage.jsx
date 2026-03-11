@@ -481,7 +481,7 @@ export default function HomePage({ user, guest, cartCount }) {
   })).filter(g => g.items.length > 0);
 
   return (
-    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", overflowX:"hidden", paddingBottom:90, paddingTop:62 }}>
+    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:90, paddingTop:62 }}>
 
       {/* SIDEBAR */}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} user={user} navigate={navigate} />
