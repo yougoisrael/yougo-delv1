@@ -246,7 +246,7 @@ function Sidebar({ open, onClose, user, navigate }) {
         overflowY:"auto",
       }}>
         {/* Header */}
-        <div style={{ background:"linear-gradient(135deg,#C8102E,#7B0D1E)", padding:"48px 20px 24px", position:"relative" }}>
+        <div style={{ background:"linear-gradient(135deg,#C8102E,#7B0D1E)", padding:"calc(env(safe-area-inset-top, 0px) + 54px) 20px 24px", position:"relative" }}>
           <button onClick={onClose} style={{ position:"absolute", top:14, left:14, background:"rgba(255,255,255,0.15)", border:"none", borderRadius:"50%", width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
             <IcoBack s={16} c="white" />
           </button>
@@ -299,7 +299,7 @@ function Sidebar({ open, onClose, user, navigate }) {
         </div>
 
         {/* Admin button — bottom */}
-        <div style={{ padding:"16px 20px 32px", borderTop:"1px solid #F3F4F6" }}>
+        <div style={{ padding:"16px 20px", paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 32px)", borderTop:"1px solid #F3F4F6" }}>
           <button
             onClick={() => { navigate("/admin"); onClose(); }}
             style={{ width:"100%", background:"linear-gradient(135deg,#111827,#1F2937)", color:"white", border:"none", borderRadius:16, padding:"14px", fontSize:14, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:10, fontFamily:"Arial,sans-serif" }}>
@@ -487,7 +487,7 @@ export default function HomePage({ user, guest, cartCount }) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} user={user} navigate={navigate} />
 
       {/* TOP BAR */}
-      <div style={{ background:"white", padding:"10px 16px", display:"flex", alignItems:"center", gap:10, width:"100%", maxWidth:430, position:"fixed", top:0, zIndex:400, boxShadow:"0 1px 8px rgba(0,0,0,0.06)" }}>
+      <div style={{ background:"white", padding:"10px 16px", display:"flex", alignItems:"center", gap:10, width:"100%", maxWidth:430, position:"fixed", top:0, zIndex:100, boxShadow:"0 1px 8px rgba(0,0,0,0.06)" }}>
         {searchOpen ? (
           <div style={{ flex:1, display:"flex", gap:8, alignItems:"center" }}>
             <input autoFocus value={searchQ} onChange={e => setSearchQ(e.target.value)}
