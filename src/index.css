@@ -12,6 +12,7 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 body {
