@@ -1,211 +1,263 @@
-import { useState } from "react";
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  OrdersPage.jsx — Real-time order tracking ✅
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { C, IcoCheck, IcoFork, IcoPackage, IcoClose } from "../components/Icons";
+import BottomNav from "../components/BottomNav";
+import { supabase } from "../lib/supabase";
 import GuestBanner from "../components/GuestBanner";
-import { C, IcoBack, IcoClose, IcoCheck, IcoShield, IcoPlus } from "../components/Icons";
 
-const CARD_GRADIENTS = [
-  "linear-gradient(135deg,#C8102E,#7B0D1E)",
-  "linear-gradient(135deg,#111827,#374151)",
-  "linear-gradient(135deg,#1D4ED8,#7C3AED)",
-  "linear-gradient(135deg,#059669,#0D9488)",
+const TABS = [
+  { key: "all",       label: "הכל" },
+  { key: "active",    label: "פעילות" },
+  { key: "completed", label: "הושלמו" },
+  { key: "cancelled", label: "בוטלו" },
 ];
 
-function CardFront({ card, idx }) {
+const STATUS_MAP = {
+  "جديد":           { label: "ממתין לאישור", color: "#F59E0B", icon: "🕐" },
+  "قيد التحضير":    { label: "בהכנה",        color: "#F97316", icon: "👨‍🍳" },
+  "في الطريق":      { label: "בדרך אליך",    color: "#8B5CF6", icon: "🛵" },
+  "مكتمل":          { label: "הושלמה",        color: "#10B981", icon: "✅" },
+  "ملغي":           { label: "בוטלה",         color: "#EF4444", icon: "❌" },
+};
+
+const ACTIVE_STATUSES = ["جديد", "قيد التحضير", "في الطريق"];
+const STEPS = ["جديد", "قيد التحضير", "في الطريق", "مكتمل"];
+const STEP_LABELS = ["התקבלה", "בהכנה", "בדרך", "הגיע!"];
+const STEP_ICONS  = ["✅", "👨‍🍳", "🛵", "🎉"];
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return "עכשיו";
+  if (mins < 60) return `לפני ${mins} דקות`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `לפני ${hrs} שעות`;
+  return `לפני ${Math.floor(hrs / 24)} ימים`;
+}
+
+// ── Live badge — מציג "LIVE" כשיש הזמנה פעילה ──
+function LiveBadge() {
+  const [dot, setDot] = useState(true);
+  useEffect(() => {
+    const t = setInterval(() => setDot(p => !p), 800);
+    return () => clearInterval(t);
+  }, []);
   return (
-    <div style={{ background: CARD_GRADIENTS[idx % CARD_GRADIENTS.length], borderRadius: 20, padding: "20px 22px", minHeight: 150, position: "relative", overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}>
-      <div style={{ position: "absolute", width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.07)", top: -30, right: -30 }} />
-      <div style={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.05)", bottom: -10, left: 20 }} />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-        <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 700 }}>{card.bank}</div>
-        <div style={{ color: "white", fontSize: 22, fontWeight: 900 }}>{card.brand === "visa" ? "VISA" : card.brand === "master" ? "MC" : "💳"}</div>
-      </div>
-      <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>•••• •••• •••• {card.last4}</div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-        <div>
-          <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 9, marginBottom: 2 }}>CARD HOLDER</div>
-          <div style={{ color: "white", fontSize: 13, fontWeight: 700 }}>{card.name}</div>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 9, marginBottom: 2 }}>EXPIRES</div>
-          <div style={{ color: "white", fontSize: 13, fontWeight: 700 }}>{card.expiry}</div>
-        </div>
+    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 20, padding: "3px 10px" }}>
+      <div style={{ width: 7, height: 7, borderRadius: "50%", background: dot ? C.red : "transparent", transition: "background 0.3s" }} />
+      <span style={{ fontSize: 10, fontWeight: 800, color: C.red }}>LIVE</span>
+    </div>
+  );
+}
+
+// ── Progress bar for active orders ──
+function OrderProgress({ status }) {
+  const curIdx = STEPS.indexOf(status);
+  return (
+    <div style={{ margin: "12px 0 4px" }}>
+      <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
+        {/* Line behind */}
+        <div style={{ position: "absolute", top: 14, left: 0, right: 0, height: 3, background: "#F3F4F6", zIndex: 0 }} />
+        <div style={{ position: "absolute", top: 14, left: 0, height: 3, background: C.red, zIndex: 1, width: `${(curIdx / (STEPS.length - 1)) * 100}%`, transition: "width 0.6s ease" }} />
+
+        {STEPS.map((s, i) => {
+          const done   = i <= curIdx;
+          const active = i === curIdx;
+          return (
+            <div key={s} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: i === 0 ? "flex-start" : i === STEPS.length - 1 ? "flex-end" : "center", zIndex: 2 }}>
+              <div style={{
+                width: active ? 30 : 24,
+                height: active ? 30 : 24,
+                borderRadius: "50%",
+                background: done ? C.red : "#F3F4F6",
+                border: active ? `3px solid ${C.red}` : "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: active ? 14 : 11,
+                boxShadow: active ? `0 0 0 5px rgba(200,16,46,0.15)` : "none",
+                transition: "all 0.4s",
+              }}>
+                {done ? <span>{STEP_ICONS[i]}</span> : <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#D1D5DB" }} />}
+              </div>
+              <div style={{ fontSize: 9, marginTop: 5, color: done ? C.red : "#9CA3AF", fontWeight: done ? 700 : 400, textAlign: "center" }}>
+                {STEP_LABELS[i]}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// ✅ طرق الدفع الجديدة - بدون Bit/PayBox
-const WALLETS = [
-  { id: "paypal",     label: "PayPal",      icon: "🅿️", color: "#003087", available: true  },
-  { id: "googlepay",  label: "Google Pay",  icon: "G",  color: "#4285F4", available: true  },
-  { id: "applepay",   label: "Apple Pay",   icon: "🍎", color: "#111",    available: false },
-];
-
-export default function CardsPage({ guest, onLogin, user }) {
+export default function OrdersPage({ cartCount, user, guest, onLogin }) {
   const navigate = useNavigate();
-  if (guest) return <GuestBanner onLogin={onLogin} message="כדי לנהל אמצעי תשלום, יש להתחבר" />;
+  if (guest) return <GuestBanner onLogin={onLogin} message="כדי לצפות בהזמנות, יש להתחבר" />;
 
-  // ✅ ما في بطاقات وهمية — تبدأ فاضية
-  const [cards, setCards] = useState([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [newCard, setNewCard] = useState({ number: "", name: "", expiry: "", cvv: "" });
-  const [errors, setErrors] = useState({});
-  const [saving, setSaving] = useState(false);
+  const [tab, setTab]       = useState("all");
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  function setDefault(id) {
-    setCards(prev => prev.map(c => ({ ...c, isDefault: c.id === id })));
-  }
+  // ── טעינה ראשונית ──
+  useEffect(() => {
+    if (!user?.id) { setLoading(false); return; }
 
-  function removeCard(id) {
-    setCards(prev => prev.filter(c => c.id !== id));
-  }
+    supabase.from("orders")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => { setOrders(data || []); setLoading(false); });
+  }, [user?.id]);
 
-  function validate() {
-    const e = {};
-    if (newCard.number.replace(/\s/g,"").length < 16) e.number = "מספר כרטיס לא תקין";
-    if (!newCard.name.trim()) e.name = "שדה חובה";
-    if (!newCard.expiry.match(/^\d{2}\/\d{2}$/)) e.expiry = "פורמט: MM/YY";
-    if (newCard.cvv.length < 3) e.cvv = "CVV לא תקין";
-    return e;
-  }
+  // ── Real-time subscription ✅ ──
+  useEffect(() => {
+    if (!user?.id) return;
 
-  function saveCard() {
-    const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
-    setSaving(true);
-    setTimeout(() => {
-      const last4 = newCard.number.replace(/\s/g,"").slice(-4);
-      const num = newCard.number.replace(/\s/g,"");
-      const brand = num[0] === "4" ? "visa" : "master";
-      setCards(prev => [...prev, {
-        id: Date.now(), brand, bank: "כרטיס אשראי", last4,
-        name: newCard.name.toUpperCase(), expiry: newCard.expiry,
-        isDefault: prev.length === 0
-      }]);
-      setShowAdd(false);
-      setNewCard({ number: "", name: "", expiry: "", cvv: "" });
-      setSaving(false);
-    }, 900);
-  }
+    const channel = supabase
+      .channel("orders-realtime-" + user.id)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",           // INSERT, UPDATE, DELETE
+          schema: "public",
+          table: "orders",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            // הזמנה חדשה — הוסף לרשימה
+            setOrders(prev => [payload.new, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            // עדכון סטטוס — עדכן בזמן אמת 🔥
+            setOrders(prev =>
+              prev.map(o => o.id === payload.new.id ? { ...o, ...payload.new } : o)
+            );
+          } else if (payload.eventType === "DELETE") {
+            setOrders(prev => prev.filter(o => o.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
 
-  function formatCardNum(val) {
-    return val.replace(/\D/g,"").slice(0,16).replace(/(.{4})/g,"$1 ").trim();
-  }
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
-  function formatExpiry(val) {
-    const d = val.replace(/\D/g,"").slice(0,4);
-    return d.length >= 2 ? d.slice(0,2) + "/" + d.slice(2) : d;
-  }
+  const filtered = orders.filter(o => {
+    if (tab === "all")       return true;
+    if (tab === "active")    return ACTIVE_STATUSES.includes(o.status);
+    if (tab === "completed") return o.status === "مكتمل";
+    if (tab === "cancelled") return o.status === "ملغي";
+    return true;
+  });
 
-  const inp = (placeholder, value, onChange, err, opts={}) => (
-    <div style={{ marginBottom: 14 }}>
-      <input placeholder={placeholder} value={value} onChange={onChange} {...opts}
-        style={{ width: "100%", border: "1.5px solid " + (err ? C.red : "#E5E7EB"), borderRadius: 13, padding: "12px 14px", fontSize: 14, outline: "none", fontFamily: "Arial,sans-serif", background: "white" }} />
-      {err && <div style={{ color: C.red, fontSize: 11, marginTop: 3 }}>{err}</div>}
-    </div>
-  );
+  const hasActive = orders.some(o => ACTIVE_STATUSES.includes(o.status));
 
   return (
-    <div className="page-enter" style={{ fontFamily: "Arial,sans-serif", background: C.bg, minHeight: "100vh", maxWidth: 430, margin: "0 auto", direction: "rtl", paddingBottom: 30 }}>
+    <div style={{ fontFamily: "Arial,sans-serif", background: C.bg, minHeight: "100vh", maxWidth: 430, margin: "0 auto", direction: "rtl", paddingBottom: 80 }}>
+
       {/* Header */}
-      <div style={{ background: "linear-gradient(160deg,#C8102E,#9B0B22)", padding: "44px 20px 70px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(160deg,#C8102E,#9B0B22)", padding: "44px 20px 60px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", bottom: -30, left: 0, right: 0, height: 60, background: C.bg, borderRadius: "50% 50% 0 0" }} />
-        <button onClick={() => navigate(-1)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", marginBottom: 14 }}>
-          <IcoBack s={18} c="white" />
-        </button>
-        <div style={{ color: "white", fontSize: 24, fontWeight: 900 }}>אמצעי תשלום</div>
-        <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, marginTop: 4 }}>{cards.length} כרטיסים שמורים</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ color: "white", fontSize: 26, fontWeight: 900 }}>ההזמנות שלי</div>
+            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, marginTop: 4 }}>{orders.length} הזמנות סה״כ</div>
+          </div>
+          {/* LIVE badge למשתמש עם הזמנה פעילה */}
+          {hasActive && <LiveBadge />}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", padding: "14px 16px 0", gap: 6 }}>
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            style={{ flex: 1, padding: "9px 4px", borderRadius: 12, border: "none", background: tab === t.key ? C.red : "white", color: tab === t.key ? "white" : "#9CA3AF", fontSize: 12, fontWeight: tab === t.key ? 800 : 500, cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.07)", fontFamily: "Arial,sans-serif", transition: "all 0.2s" }}>
+            {t.label}
+          </button>
+        ))}
       </div>
 
       <div style={{ padding: "12px 16px" }}>
-        {/* כרטיסים */}
-        {cards.length === 0 && !showAdd && (
-          <div style={{ textAlign: "center", padding: "30px 0 20px", color: "#9CA3AF" }}>
-            <div style={{ fontSize: 44, marginBottom: 10 }}>💳</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#374151" }}>אין כרטיסים שמורים</div>
-            <div style={{ fontSize: 12, marginTop: 4 }}>הוסף כרטיס אשראי לתשלום מהיר</div>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 40, color: "#9CA3AF" }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid #E5E7EB", borderTopColor: C.red, animation: "spin .7s linear infinite", margin: "0 auto 12px" }} />
+            טוען הזמנות...
           </div>
-        )}
-
-        {cards.map((card, idx) => (
-          <div key={card.id} style={{ marginBottom: 14 }}>
-            <CardFront card={card} idx={idx} />
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 4px" }}>
-              <button onClick={() => removeCard(card.id)}
-                style={{ background: "none", border: "none", color: "#EF4444", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                <IcoClose s={13} c="#EF4444" /> הסר
-              </button>
-              <button onClick={() => setDefault(card.id)}
-                style={{ background: "none", border: "none", color: card.isDefault ? C.green : "#9CA3AF", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                <IcoCheck s={13} c={card.isDefault ? C.green : "#9CA3AF"} />
-                {card.isDefault ? "ברירת מחדל" : "הגדר כברירת מחדל"}
-              </button>
-            </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "50px 0", color: "#9CA3AF" }}>
+            <div style={{ fontSize: 50, marginBottom: 12 }}>📦</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "#111827" }}>אין הזמנות</div>
+            <div style={{ fontSize: 13, marginTop: 4, marginBottom: 24 }}>עוד לא הזמנת שום דבר</div>
+            <button onClick={() => navigate("/")}
+              style={{ background: C.red, color: "white", border: "none", borderRadius: 14, padding: "12px 28px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+              הזמן עכשיו
+            </button>
           </div>
-        ))}
+        ) : filtered.map(order => {
+          const st = STATUS_MAP[order.status] || { label: order.status, color: "#9CA3AF", icon: "📦" };
+          const isActive = ACTIVE_STATUSES.includes(order.status);
 
-        {/* הוסף כרטיס */}
-        {!showAdd ? (
-          <button onClick={() => setShowAdd(true)}
-            style={{ width: "100%", background: "#111827", color: "white", border: "none", borderRadius: 16, padding: "14px", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
-            <IcoPlus s={18} c="white" /> הוסף כרטיס חדש
-          </button>
-        ) : (
-          <div style={{ background: "white", borderRadius: 18, padding: "20px", marginBottom: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#111827", marginBottom: 16 }}>כרטיס חדש</div>
-            {inp("מספר כרטיס", newCard.number,
-              e => setNewCard(p => ({...p, number: formatCardNum(e.target.value)})),
-              errors.number, { inputMode: "numeric", style: { letterSpacing: 2, direction: "ltr" } })}
-            {inp("שם בעל הכרטיס", newCard.name,
-              e => setNewCard(p => ({...p, name: e.target.value.toUpperCase()})),
-              errors.name, { style: { textTransform: "uppercase" } })}
-            <div style={{ display: "flex", gap: 10 }}>
-              <div style={{ flex: 1 }}>
-                {inp("MM/YY", newCard.expiry,
-                  e => setNewCard(p => ({...p, expiry: formatExpiry(e.target.value)})),
-                  errors.expiry, { inputMode: "numeric", maxLength: 5 })}
+          return (
+            <div key={order.id}
+              style={{ background: "white", borderRadius: 18, padding: "16px", marginBottom: 12, boxShadow: isActive ? `0 4px 20px rgba(200,16,46,0.12)` : "0 2px 10px rgba(0,0,0,0.06)", border: isActive ? `1.5px solid rgba(200,16,46,0.15)` : "1.5px solid transparent", transition: "all 0.3s" }}>
+
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: "#111827" }}>{order.restaurant_name || "הזמנה"}</div>
+                  <div style={{ fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>{timeAgo(order.created_at)}</div>
+                </div>
+                <div style={{ background: st.color + "18", color: st.color, fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20, display: "flex", alignItems: "center", gap: 5 }}>
+                  <span>{st.icon}</span>{st.label}
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                {inp("CVV", newCard.cvv,
-                  e => setNewCard(p => ({...p, cvv: e.target.value.replace(/\D/g,"").slice(0,4)})),
-                  errors.cvv, { inputMode: "numeric", maxLength: 4, type: "password" })}
+
+              {/* Items */}
+              <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 10, lineHeight: 1.6 }}>
+                {Array.isArray(order.items)
+                  ? order.items.map((it, i) => (
+                      <div key={i}>{typeof it === "object" ? `${it.name} x${it.qty}` : it}</div>
+                    ))
+                  : order.items}
+              </div>
+
+              {/* Progress bar — فقط للطلبات الفعالة */}
+              {isActive && <OrderProgress status={order.status} />}
+
+              {/* Footer */}
+              <div style={{ borderTop: "1px solid #F3F4F6", paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 16, fontWeight: 900, color: C.red }}>₪{order.total}</span>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {order.status === "مكتمل" && (
+                    <button onClick={() => navigate("/")}
+                      style={{ background: "#111827", color: "white", border: "none", borderRadius: 12, padding: "7px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      הזמן שוב
+                    </button>
+                  )}
+                  {order.status === "في الطريق" && (
+                    <span style={{ fontSize: 12, color: "#8B5CF6", fontWeight: 700 }}>🛵 בדרך — ~15 דק׳</span>
+                  )}
+                  {order.status === "جديد" && (
+                    <span style={{ fontSize: 12, color: "#F59E0B", fontWeight: 700, animation: "pulse 1.5s infinite" }}>⏳ ממתין לאישור...</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => { setShowAdd(false); setErrors({}); }}
-                style={{ flex: 1, background: "#F3F4F6", color: "#374151", border: "none", borderRadius: 13, padding: "12px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                ביטול
-              </button>
-              <button onClick={saveCard} disabled={saving}
-                style={{ flex: 2, background: saving ? "rgba(200,16,46,0.5)" : C.red, color: "white", border: "none", borderRadius: 13, padding: "12px", fontSize: 13, fontWeight: 800, cursor: saving ? "not-allowed" : "pointer" }}>
-                {saving ? "שומר..." : "שמור כרטיס"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ✅ ארנקים דיגיטליים - PayPal / Google Pay / Apple Pay */}
-        <div style={{ fontWeight: 800, fontSize: 15, color: "#111827", marginBottom: 12, marginTop: 4 }}>ארנקים דיגיטליים</div>
-        {WALLETS.map(w => (
-          <div key={w.id} style={{ background: "white", borderRadius: 16, padding: "14px 16px", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 12, background: w.color + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: w.id === "googlepay" ? 16 : 20, fontWeight: 900, color: w.color }}>
-                {w.icon}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{w.label}</div>
-            </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: w.available ? C.green : "#9CA3AF" }}>
-              {w.available ? "✓ זמין" : "בקרוב"}
-            </div>
-          </div>
-        ))}
-
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16, justifyContent: "center" }}>
-          <IcoShield s={14} c={C.green} />
-          <span style={{ fontSize: 11, color: C.green }}>מאובטח עם הצפנת 256-bit SSL</span>
-        </div>
+          );
+        })}
       </div>
-      <style>{`*{box-sizing:border-box}`}</style>
+
+      <BottomNav cartCount={cartCount} />
+      <style>{`
+        *{box-sizing:border-box}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+      `}</style>
     </div>
   );
 }
