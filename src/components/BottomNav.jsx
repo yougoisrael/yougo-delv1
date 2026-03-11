@@ -43,8 +43,9 @@ export default function BottomNav({ cartCount }) {
         background: "white",
         borderTop: "1px solid #F0F0F0",
         display: "flex",
-        padding: "6px 4px 16px",
-        zIndex: 500,
+        padding: "6px 4px",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
+        zIndex: 150,
         boxShadow: "0 -4px 24px rgba(0,0,0,0.08)",
         // Glass effect
         backdropFilter: "blur(12px)",
