@@ -48,6 +48,7 @@ const I = {
   eye:     "M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z",
   store:   "M3 9l1.5-5h15L21 9M3 9a3 3 0 006 0 3 3 0 006 0 3 3 0 006 0M5 21V9M19 21V9M5 21h14",
   tag:     "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z",
+  qr:      "M3 3h7v7H3zM3 14h7v7H3zM14 3h7v7h-7zM14 14h3v3h-3zM17 17h3v3h-3zM17 14h3",
   check:   "M5 13l4 4L19 7",
   phone:   "M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z",
   star:    "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z",
@@ -206,6 +207,7 @@ function BottomNav({ tab, setTab, newOrdersCount }) {
     { id: "orders",   label: "الطلبات",  icon: I.orders, badge: newOrdersCount },
     { id: "menu",     label: "القائمة",  icon: I.menu    },
     { id: "offers",   label: "العروض",   icon: I.tag     },
+    { id: "qr",       label: "QR كود",    icon: I.qr      },
     { id: "settings", label: "الإعدادات",icon: I.settings},
   ];
   return (
@@ -1075,6 +1077,207 @@ function OffersTab({ business, offers, setOffers, notify }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SETTINGS TAB
 // ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// QR TAB — Professional QR Code page for business
+// ═══════════════════════════════════════════════════════════════════════════════
+function QRTab({ business }) {
+  const [copied, setCopied] = useState(false);
+  const [activeCard, setActiveCard] = useState("customer"); // customer | menu | share
+
+  const baseUrl = "https://yougo-delv1.vercel.app";
+  const bizId = business?.id || "demo";
+  const bizName = business?.name || "مطعمك";
+  const bizCategory = business?.category || "";
+
+  // Links
+  const restaurantUrl = `${baseUrl}/#/restaurant/${bizId}`;
+  const menuUrl = `${baseUrl}/#/restaurant/${bizId}`;
+
+  function copyLink(url) {
+    navigator.clipboard?.writeText(url).catch(() => {});
+    const el = document.createElement("textarea");
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    document.body.removeChild(el);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function share(url) {
+    if (navigator.share) {
+      navigator.share({ title: bizName, text: `طلب من ${bizName} عبر Yougo!`, url });
+    } else {
+      copyLink(url);
+    }
+  }
+
+  // Generate QR as SVG using a simple QR-like visual (actual QR via API)
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(restaurantUrl)}&bgcolor=ffffff&color=111827&margin=10&ecc=H`;
+
+  return (
+    <div style={{ fontFamily: "Arial,sans-serif", direction: "rtl", paddingBottom: 100 }}>
+
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,#111827,#1F2937)", padding: "48px 20px 32px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div style={{ position: "absolute", bottom: -30, left: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.03)" }} />
+        <div style={{ position: "relative" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: 600, letterSpacing: 1, marginBottom: 6 }}>QR CODE • كود المطعم</div>
+          <div style={{ color: "white", fontSize: 22, fontWeight: 900, marginBottom: 4 }}>{bizName}</div>
+          <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{bizCategory}</div>
+        </div>
+      </div>
+
+      <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+        {/* ── Main QR Card ── */}
+        <div style={{ background: "white", borderRadius: 24, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.1)" }}>
+          {/* QR header */}
+          <div style={{ background: "linear-gradient(135deg,#C8102E,#7B0D1E)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📱</div>
+            <div>
+              <div style={{ color: "white", fontWeight: 800, fontSize: 14 }}>كود QR الخاص بمطعمك</div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11, marginTop: 2 }}>يفتح صفحة مطعمك مباشرةً</div>
+            </div>
+          </div>
+
+          {/* QR Image */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "28px 20px 20px" }}>
+            <div style={{ background: "white", borderRadius: 20, padding: 12, boxShadow: "0 0 0 6px #F3F4F6, 0 0 0 8px #E5E7EB", marginBottom: 20 }}>
+              <img
+                src={qrApiUrl}
+                alt="QR Code"
+                width={200}
+                height={200}
+                style={{ display: "block", borderRadius: 8 }}
+                onError={e => { e.target.style.display="none"; }}
+              />
+              {/* Fallback if no internet */}
+              <div style={{ width: 200, height: 200, background: "#F9FAFB", borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", marginTop: -200 }}>
+                <svg width="200" height="200" viewBox="0 0 200 200" style={{ position: "absolute" }}>
+                  {/* QR corner squares */}
+                  <rect x="20" y="20" width="50" height="50" rx="6" fill="none" stroke="#111827" strokeWidth="5"/>
+                  <rect x="30" y="30" width="30" height="30" rx="3" fill="#111827"/>
+                  <rect x="130" y="20" width="50" height="50" rx="6" fill="none" stroke="#111827" strokeWidth="5"/>
+                  <rect x="140" y="30" width="30" height="30" rx="3" fill="#111827"/>
+                  <rect x="20" y="130" width="50" height="50" rx="6" fill="none" stroke="#111827" strokeWidth="5"/>
+                  <rect x="30" y="140" width="30" height="30" rx="3" fill="#111827"/>
+                  {/* Center logo */}
+                  <rect x="85" y="85" width="30" height="30" rx="6" fill="#C8102E"/>
+                  <text x="100" y="106" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">Y</text>
+                </svg>
+              </div>
+            </div>
+
+            {/* Business ID badge */}
+            <div style={{ background: "#F3F4F6", borderRadius: 12, padding: "8px 20px", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: "#6B7280", fontWeight: 600 }}>معرّف المطعم:</span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: "#111827", fontFamily: "monospace", letterSpacing: 1 }}>{String(bizId).slice(0, 8).toUpperCase()}</span>
+            </div>
+
+            {/* URL */}
+            <div style={{ width: "100%", background: "#F8FAFC", border: "1.5px solid #E5E7EB", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 10, color: "#9CA3AF", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", direction: "ltr", textAlign: "left" }}>{restaurantUrl}</span>
+              <button onClick={() => copyLink(restaurantUrl)}
+                style={{ background: copied ? "#ECFDF5" : "#F3F4F6", border: "none", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", color: copied ? "#10B981" : "#374151", flexShrink: 0, fontFamily: "inherit", transition: "all 0.2s" }}>
+                {copied ? "✓ تم" : "نسخ"}
+              </button>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: "flex", gap: 10, width: "100%" }}>
+              <button
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = qrApiUrl;
+                  link.download = `yougo-qr-${bizId}.png`;
+                  link.click();
+                }}
+                style={{ flex: 1, background: "#111827", color: "white", border: "none", borderRadius: 14, padding: "13px 8px", fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit" }}>
+                ⬇️ تحميل
+              </button>
+              <button
+                onClick={() => share(restaurantUrl)}
+                style={{ flex: 1, background: C.red, color: "white", border: "none", borderRadius: 14, padding: "13px 8px", fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit" }}>
+                🔗 مشاركة
+              </button>
+              <button
+                onClick={() => window.print()}
+                style={{ flex: 1, background: "#F3F4F6", color: "#111827", border: "none", borderRadius: 14, padding: "13px 8px", fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit" }}>
+                🖨️ طباعة
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── How to use section ── */}
+        <div style={{ background: "white", borderRadius: 20, padding: "18px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: "#111827", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+            📋 كيف تستخدم الكود؟
+          </div>
+          {[
+            { step: "1", icon: "🖨️", title: "اطبع الكود", desc: "اضغط \"طباعة\" أو حمّل الصورة واطبعها" },
+            { step: "2", icon: "📌", title: "علّقه في مطعمك", desc: "عند المدخل، على الطاولات، أو على المنيو" },
+            { step: "3", icon: "📱", title: "الزبون يصوّر", desc: "يفتح الكاميرا ويصوّر الكود — يدخل لمطعمك مباشرة!" },
+            { step: "4", icon: "🛵", title: "يطلب ويدفع", desc: "يختار وجباته ويطلب — يصلك الطلب فوراً" },
+          ].map((s, i) => (
+            <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: i < 3 ? 14 : 0 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: i === 0 ? "#F3F4F6" : i === 1 ? "#FEF2F2" : i === 2 ? "#EFF6FF" : "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+                {s.icon}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#111827" }}>{s.title}</div>
+                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2, lineHeight: 1.5 }}>{s.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Share on Social ── */}
+        <div style={{ background: "white", borderRadius: 20, padding: "18px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: "#111827", marginBottom: 14 }}>📲 شارك على منصاتك</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {[
+              { label: "واتساب", bg: "#25D366", emoji: "💬",
+                url: `https://wa.me/?text=${encodeURIComponent(`🍽️ ${bizName} الآن على Yougo!\nاطلب مباشرة: ${restaurantUrl}`)}` },
+              { label: "انستغرام", bg: "linear-gradient(135deg,#E1306C,#833AB4)", emoji: "📸",
+                url: restaurantUrl },
+              { label: "فيسبوك", bg: "#1877F2", emoji: "👥",
+                url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(restaurantUrl)}` },
+            ].map((s, i) => (
+              <button key={i}
+                onClick={() => window.open(s.url, "_blank")}
+                style={{ flex: 1, background: s.bg, color: "white", border: "none", borderRadius: 14, padding: "12px 6px", fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontFamily: "inherit" }}>
+                <span style={{ fontSize: 20 }}>{s.emoji}</span>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Stats teaser ── */}
+        <div style={{ background: "linear-gradient(135deg,#1D4ED8,#7C3AED)", borderRadius: 20, padding: "18px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ fontSize: 32 }}>📊</div>
+          <div>
+            <div style={{ color: "white", fontWeight: 900, fontSize: 14 }}>تتبع الزيارات قريباً!</div>
+            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11, marginTop: 3, lineHeight: 1.5 }}>ستعرف كم شخص فتح مطعمك عبر الكود</div>
+          </div>
+        </div>
+
+      </div>
+
+      <style>{`
+        @media print {
+          body > *:not(#qr-print) { display: none !important; }
+          .no-print { display: none !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function SettingsTab({ business, setBusiness, notify, onLogout }) {
   const [form, setForm] = useState({
     name: business?.name || "", category: business?.category || "",
@@ -1248,6 +1451,7 @@ export default function BusinessPortal({ onBack }) {
       {tab === "menu"     && <MenuTab     business={business} menuItems={menuItems} setMenuItems={setMenuItems} notify={notify} />}
       {tab === "offers"   && <OffersTab   business={business} offers={offers} setOffers={setOffers} notify={notify} />}
       {tab === "settings" && <SettingsTab business={business} setBusiness={setBusiness} notify={notify} onLogout={() => { setAuthed(false); setBusiness(null); onBack(); }} />}
+      {tab === "qr"       && <QRTab       business={business} />}
 
       <BottomNav tab={tab} setTab={setTab} newOrdersCount={newOrdersCount} />
 
