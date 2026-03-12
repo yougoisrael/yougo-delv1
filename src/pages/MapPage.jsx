@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "./lib/supabase";
+import { supabase } from "../lib/supabase";
 
 const C = {
   red:    "#C8102E",
