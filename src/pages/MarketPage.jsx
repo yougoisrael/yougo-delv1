@@ -85,19 +85,90 @@ function StoreCard({ s, onClick, delay }) {
   );
 }
 
-// ── Category icons ──────────────────────────────────
-function MktAll({ active }) { return (<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M6 8h4l5 14h6l5-14h4" stroke={active?"white":C.red} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="14" cy="26" r="2" fill={active?"white":C.red}/><circle cx="22" cy="26" r="2" fill={active?"white":C.red}/></svg>); }
-function MktFruits({ active }) { return (<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M16 10c-5 0-8 4-8 9s3 9 8 9 8-4 8-9-3-9-8-9z" fill={active?"white":"#EF4444"} opacity={active?0.9:1}/><path d="M16 10c1-4 5-5 7-3" stroke={active?"white":"#16A34A"} strokeWidth="2" strokeLinecap="round" fill="none"/></svg>); }
-function MktMeat({ active }) { return (<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M8 22c0-6 4-12 12-12 4 0 7 2 7 5s-3 7-7 7H8z" fill={active?"white":"#EF4444"} opacity={active?0.9:1}/><rect x="10" y="19" width="14" height="6" rx="3" fill={active?"rgba(255,255,255,0.6)":"white"}/></svg>); }
-function MktSnacks({ active }) { return (<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M10 14c-2-4 0-8 4-8s5 4 2 8M18 14c-2-4 0-8 4-8s5 4 2 8" fill={active?"white":"#FEF08A"}/><path d="M10 14c-4-2-6 2-6 6s4 8 12 8 12-4 12-8-2-8-6-6" fill={active?"rgba(255,255,255,0.8)":"#FBBF24"}/></svg>); }
-function MktDairy({ active }) { return (<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M13 8h6v2c3 1 5 4 5 8v8H8v-8c0-4 2-7 5-8V8z" fill={active?"white":"#DBEAFE"}/><rect x="12" y="4" width="8" height="5" rx="2" fill={active?"rgba(255,255,255,0.6)":"#93C5FD"}/></svg>); }
+// ── Market Category Icons — Professional SVG ──────
+function MktAll({ active }) {
+  const c = active ? "white" : null;
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* Shopping cart */}
+      <path d="M6 8h4l5 16h14l4-10H11" stroke={c || C.red} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      <circle cx="16" cy="29" r="2.5" fill={c || C.red}/>
+      <circle cx="26" cy="29" r="2.5" fill={c || C.red}/>
+    </svg>
+  );
+}
+function MktFruits({ active }) {
+  const green = active ? "white" : "#16A34A";
+  const red   = active ? "rgba(255,255,255,0.85)" : "#EF4444";
+  const yel   = active ? "rgba(255,255,255,0.7)"  : "#FCD34D";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* Apple */}
+      <path d="M20 11c-1-3 2-5 4-4" stroke={green} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      <path d="M12 17c0-4 3-7 8-7s8 3 8 7c0 8-4 14-8 14s-8-6-8-14z" fill={red}/>
+      {/* Highlight */}
+      <ellipse cx="16" cy="20" rx="2" ry="3.5" fill="rgba(255,255,255,0.25)" transform="rotate(-15 16 20)"/>
+      {/* Leaf */}
+      <path d="M20 11c2-3 6-2 5 1-1 2-4 2-5-1z" fill={green}/>
+    </svg>
+  );
+}
+function MktMeat({ active }) {
+  const meat = active ? "white" : "#C8102E";
+  const bone = active ? "rgba(255,255,255,0.6)" : "#FCD34D";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* Leg shape */}
+      <path d="M10 30c-3-3-2-7 1-9l14-14c2-2 6-3 9-1s3 6 1 9L21 29c-2 2-6 3-9 1z" fill={meat}/>
+      {/* Bone knob top */}
+      <circle cx="31" cy="9" r="4" fill={bone}/>
+      {/* Bone knob bottom */}
+      <circle cx="9" cy="31" r="4" fill={bone}/>
+      {/* Shine */}
+      <ellipse cx="17" cy="17" rx="3" ry="6" fill="rgba(255,255,255,0.2)" transform="rotate(-45 17 17)"/>
+    </svg>
+  );
+}
+function MktSnacks({ active }) {
+  const bag  = active ? "white" : "#F59E0B";
+  const text = active ? "rgba(255,255,255,0.5)" : "#D97706";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* Chip bag shape */}
+      <path d="M12 8l4 3h8l4-3 2 10-2 2-4 3h-8l-4-3-2-2L12 8z" fill={bag}/>
+      <path d="M14 18l4 4h4l4-4" fill={text}/>
+      {/* Bag bottom */}
+      <path d="M14 23l-2 9h16l-2-9H14z" fill={bag}/>
+      {/* Fold line */}
+      <path d="M12 18h16" stroke={text} strokeWidth="1.5"/>
+    </svg>
+  );
+}
+function MktDairy({ active }) {
+  const white_ = active ? "rgba(255,255,255,0.9)" : "#DBEAFE";
+  const blue   = active ? "rgba(255,255,255,0.6)" : "#3B82F6";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* Milk carton */}
+      <rect x="11" y="16" width="18" height="20" rx="2" fill={white_}/>
+      {/* Carton top/roof */}
+      <path d="M11 16l9-9 9 9H11z" fill={blue}/>
+      {/* Label stripe */}
+      <rect x="11" y="24" width="18" height="6" fill={blue} opacity="0.35"/>
+      {/* Milk dots */}
+      <circle cx="17" cy="21" r="1.5" fill={blue} opacity="0.5"/>
+      <circle cx="20" cy="21" r="1.5" fill={blue} opacity="0.5"/>
+      <circle cx="23" cy="21" r="1.5" fill={blue} opacity="0.5"/>
+    </svg>
+  );
+}
 
 const MKTCATS = [
-  { id:"all",    Cmp:MktAll,    label:"מרקט" },
-  { id:"fruits", Cmp:MktFruits, label:"פירות וירקות" },
-  { id:"meat",   Cmp:MktMeat,   label:"דגים ובשרים" },
-  { id:"snacks", Cmp:MktSnacks, label:"בתי קלי" },
-  { id:"dairy",  Cmp:MktDairy,  label:"מוצרי חלב" },
+  { id:"all",    Cmp:MktAll,    label:"מרקט",          bg:"#C8102E" },
+  { id:"fruits", Cmp:MktFruits, label:"פירות וירקות",  bg:"#16A34A" },
+  { id:"meat",   Cmp:MktMeat,   label:"דגים ובשרים",   bg:"#C8102E" },
+  { id:"snacks", Cmp:MktSnacks, label:"חטיפים",         bg:"#F59E0B" },
+  { id:"dairy",  Cmp:MktDairy,  label:"מוצרי חלב",     bg:"#3B82F6" },
 ];
 
 export default function MarketPage({ cartCount, user }) {
@@ -259,52 +330,58 @@ export default function MarketPage({ cartCount, user }) {
             <div style={{ fontSize:40, marginBottom:12 }}>🏪</div>
             <div style={{ fontSize:15, fontWeight:600 }}>אין חנויות זמינות</div>
           </div>
-        ) : (
-          <>
-            {/* All stores row */}
+        ) : (() => {
+          // Build category groups like HomePage
+          const catGroups = MKTCATS.filter(c => c.id !== "all").map(c => {
+            const items = filtered.filter(s =>
+              (s.category||"").toLowerCase().includes(c.id) ||
+              (s.tags||[]).includes(c.id)
+            );
+            return { ...c, items };
+          }).filter(g => g.items.length > 0);
+
+          const CarouselRow = ({ title, items, icon, onSeeAll }) => (
             <div style={{ marginBottom:24 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px 10px", }}>
-                <span style={{ fontSize:16, fontWeight:900, color:C.dark, display:"flex", alignItems:"center", gap:6 }}>
-                  🔥 כל החנויות
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 16px 10px" }}>
+                <span style={{ fontSize:16, fontWeight:900, color:C.dark, display:"flex", alignItems:"center", gap:8 }}>
+                  {icon}
+                  {title}
                 </span>
-                <span style={{ fontSize:12, color:C.gray }}>{filtered.length} חנויות</span>
+                {onSeeAll && <span onClick={onSeeAll} style={{ fontSize:12, color:C.red, fontWeight:700, cursor:"pointer" }}>הכל ←</span>}
               </div>
-              <div style={{ display:"flex", gap:12, overflowX:"auto", padding:"4px 16px 8px", scrollbarWidth:"none", WebkitOverflowScrolling:"touch", scrollSnapType:"x mandatory" }}>
-                {filtered.map((s, i) => (
-                  <div key={s.id} style={{ scrollSnapAlign:"start", flexShrink:0, width:200 }}>
-                    <StoreCard s={s} onClick={() => navigate("/restaurant/"+s.id, { state:s })} delay={i*50}/>
-                  </div>
+              <div style={{
+                display:"flex", gap:12, overflowX:"auto", overflowY:"visible",
+                paddingTop:4, paddingBottom:12,
+                paddingInlineStart:16, paddingInlineEnd:16,
+                scrollbarWidth:"none", WebkitOverflowScrolling:"touch",
+              }}>
+                {items.map((s, i) => (
+                  <StoreCard key={s.id} s={s} onClick={() => navigate("/restaurant/"+s.id, { state:s })} delay={i*50}/>
                 ))}
               </div>
             </div>
+          );
 
-            {/* Per-category rows */}
-            {MKTCATS.filter(c => c.id !== "all").map(cat => {
-              const catItems = filtered.filter(s =>
-                s.category?.toLowerCase().includes(cat.id) ||
-                s.tags?.includes(cat.id)
-              );
-              if (catItems.length === 0) return null;
-              return (
-                <div key={cat.id} style={{ marginBottom:24 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 16px 10px" }}>
-                    <span style={{ fontSize:16, fontWeight:900, color:C.dark, display:"flex", alignItems:"center", gap:6 }}>
-                      <cat.Cmp active={false}/> {cat.label}
-                    </span>
-                    <span style={{ fontSize:12, color:C.gray }}>{catItems.length} חנויות</span>
-                  </div>
-                  <div style={{ display:"flex", gap:12, overflowX:"auto", padding:"4px 16px 8px", scrollbarWidth:"none", WebkitOverflowScrolling:"touch", scrollSnapType:"x mandatory" }}>
-                    {catItems.map((s, i) => (
-                      <div key={s.id} style={{ scrollSnapAlign:"start", flexShrink:0, width:200 }}>
-                        <StoreCard s={s} onClick={() => navigate("/restaurant/"+s.id, { state:s })} delay={i*50}/>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </>
-        )}
+          return (
+            <>
+              {/* All stores row */}
+              <CarouselRow
+                title="🔥 כל החנויות"
+                items={filtered}
+                onSeeAll={null}
+              />
+              {/* Per-category rows */}
+              {catGroups.map(g => (
+                <CarouselRow
+                  key={g.id}
+                  title={g.label}
+                  icon={<g.Cmp active={false}/>}
+                  items={g.items}
+                />
+              ))}
+            </>
+          );
+        })()}
       </div>
 
       <BottomNav cartCount={cartCount}/>
