@@ -12,54 +12,81 @@ html, body {
   margin: 0;
   padding: 0;
   overscroll-behavior: none;
+  background: #E8E8E8;
 }
 
 #root {
   margin: 0 auto;
   max-width: 430px;
   min-height: 100vh;
-  position: relative;
   background: #F7F7F8;
-  overflow-x: hidden;
+  position: relative;
 }
 
 body {
   font-family: Arial, sans-serif;
-  background: #E5E5E5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Fixed header ── */
-.fixed-header {
+/* ── Fixed Header (TopBar + Tabs) ── */
+.app-header {
   position: fixed;
   top: 0;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: 430px;
-  z-index: 300;
-  background: white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  z-index: 200;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 
-/* ── Fixed bottom nav ── */
-.fixed-nav {
+/* ── Fixed Bottom Nav ── */
+.app-nav {
   position: fixed;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: 430px;
-  z-index: 300;
-  background: white;
+  z-index: 200;
+  background: #fff;
   border-top: 1px solid #F0F0F0;
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.07);
 }
 
-.page-wrap {
+/* ── Sidebar overlay & drawer are z-index 500+ so they go above header ── */
+
+/* ── Fixed Header ── */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
+  max-width: 430px;
+  z-index: 100;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
+
+/* ── Fixed Bottom Nav ── */
+.app-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  z-index: 100;
+  background: #fff;
+  border-top: 1px solid #F0F0F0;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.07);
+}
+
+/* ── hide scrollbars in carousels ── */
+.carousel::-webkit-scrollbar { display: none; }
 
 /* ── Smooth scroll everywhere ── */
 * {
