@@ -1,5 +1,5 @@
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   YOUGO — Global Styles v3
+   YOUGO — Global Styles
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 *, *::before, *::after {
@@ -7,17 +7,21 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html {
   margin: 0; padding: 0;
-  overscroll-behavior: none;
-  background: #E8E8E8;
-  overflow-x: hidden;   /* prevent horizontal scroll without breaking fixed */
+  overflow-x: hidden;
 }
 
 body {
+  margin: 0; padding: 0;
+  overscroll-behavior: none;
+  background: #E8E8E8;
   font-family: Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* overflow-x on body = the ONLY safe way to prevent horizontal scroll
+     without breaking position:fixed inside children */
+  overflow-x: hidden;
 }
 
 #root {
@@ -25,44 +29,53 @@ body {
   max-width: 430px;
   min-height: 100vh;
   background: #F7F7F8;
+  /* NO position:relative — it breaks fixed children on some browsers */
+  /* NO overflow — same reason */
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Z-INDEX:
-   app-header / app-nav = 300
-   sidebar overlay      = 600
-   sidebar drawer       = 601
+   FIXED HEADER & NAV
+   Rule: left:50% + translateX(-50%) is correct and
+   works everywhere as long as no ancestor has
+   overflow:hidden or transform set.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-/* ── Fixed Header ── */
 .app-header {
   position: fixed;
   top: 0;
-  /* center inside max-width container */
-  left: max(0px, calc(50vw - 215px));
-  width: min(100vw, 430px);
-  z-index: 9999;
-  background: rgba(255,255,255,0.92);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  z-index: 500;
+  background: rgba(255,255,255,0.94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.08);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.07);
 }
 
-/* ── Fixed Bottom Nav ── */
 .app-nav {
   position: fixed;
   bottom: 0;
-  left: max(0px, calc(50vw - 215px));
-  width: min(100vw, 430px);
-  z-index: 9999;
-  background: rgba(255,255,255,0.95);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  z-index: 500;
+  background: rgba(255,255,255,0.96);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
 }
 
-/* ━━ ANIMATIONS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* sidebar goes above header */
+/* overlay: z-index 600, drawer: z-index 601 (set inline) */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ANIMATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
 @keyframes pageSlideUp {
   from { opacity:0; transform:translateY(18px); }
   to   { opacity:1; transform:translateY(0); }
@@ -97,7 +110,10 @@ body {
   from { opacity:0; } to { opacity:1; }
 }
 
-/* ━━ UTILITY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   UTILITIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
 .page-enter   { animation: pageSlideUp 0.35s cubic-bezier(0.34,1.2,0.64,1) both; }
 .bottom-sheet { animation: sheetUp    0.32s cubic-bezier(0.34,1.1,0.64,1) both; }
 .toast        { animation: toastIn   0.28s cubic-bezier(0.34,1.4,0.64,1) both; }
@@ -109,15 +125,12 @@ body {
   border-radius: 8px;
 }
 
-/* ━━ SCROLLBARS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 ::-webkit-scrollbar { display:none; }
 * { scrollbar-width:none; }
 
-/* ━━ BUTTONS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 button {
   transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1),
-              opacity 0.12s ease,
-              box-shadow 0.15s ease;
+              opacity 0.12s ease, box-shadow 0.15s ease;
   cursor: pointer;
 }
 button:active { transform:scale(0.94) !important; opacity:0.85; }
@@ -129,10 +142,10 @@ input, textarea, select {
 input:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(200,16,46,0.12);
 }
+
 a   { transition: opacity 0.15s ease; }
 img { transition: opacity 0.3s ease; }
 
-/* ━━ CARDS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 .card-hover {
   transition: transform 0.2s cubic-bezier(0.34,1.2,0.64,1), box-shadow 0.2s ease;
 }
@@ -141,18 +154,15 @@ img { transition: opacity 0.3s ease; }
 .restaurant-card {
   transition: transform 0.2s cubic-bezier(0.34,1.2,0.64,1), box-shadow 0.2s ease;
 }
-.restaurant-card:active {
-  transform: scale(0.97);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
+.restaurant-card:active { transform:scale(0.97); box-shadow:0 2px 8px rgba(0,0,0,0.1); }
 
-/* ━━ NAV ICONS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 .nav-icon {
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), color 0.15s ease;
 }
 .nav-icon.active { transform:scale(1.18); }
 
-/* ━━ STAGGER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.scroll-smooth { overflow-y:auto; -webkit-overflow-scrolling:touch; }
+
 .stagger > * { animation: slideUp 0.35s cubic-bezier(0.34,1.2,0.64,1) both; }
 .stagger > *:nth-child(1) { animation-delay:0.05s; }
 .stagger > *:nth-child(2) { animation-delay:0.10s; }
@@ -161,7 +171,6 @@ img { transition: opacity 0.3s ease; }
 .stagger > *:nth-child(5) { animation-delay:0.25s; }
 .stagger > *:nth-child(6) { animation-delay:0.30s; }
 
-/* ━━ RIPPLE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 .ripple { position:relative; overflow:hidden; }
 .ripple::after {
   content:''; position:absolute; inset:0;
@@ -170,9 +179,3 @@ img { transition: opacity 0.3s ease; }
   transition:opacity 0.3s ease;
 }
 .ripple:active::after { opacity:1; }
-
-.scroll-smooth {
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  scroll-behavior:smooth;
-}
