@@ -343,22 +343,6 @@ export default function MarketPage({ cartCount, user }) {
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [searchQ, setSearchQ]           = useState("");
   const [banner, setBanner]             = useState(0);
-  const [headerH, setHeaderH]           = useState(106);
-  const headerRef                       = useRef(null);
-
-  useEffect(() => {
-    if (!headerRef.current) return;
-    const ro = new ResizeObserver(() => setHeaderH(headerRef.current?.offsetHeight||106));
-    ro.observe(headerRef.current);
-    setHeaderH(headerRef.current.offsetHeight||106);
-    return () => ro.disconnect();
-  }, []);
-
-  // Auto-advance banner
-  useEffect(() => {
-    const t = setInterval(() => setBanner(p => (p+1) % MKT_BANNERS.length), 3800);
-    return () => clearInterval(t);
-  }, []);
 
   useEffect(() => {
     supabase.from("restaurants").select("*").eq("active", true).eq("page_type","market")
@@ -388,12 +372,12 @@ export default function MarketPage({ cartCount, user }) {
   );
 
   return (
-    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:90, paddingTop:headerH }}>
+    <div className="page-enter" style={{ display:"flex", flexDirection:"column", height:"100dvh", fontFamily:"Arial,sans-serif", direction:"rtl", background:C.bg }}>
 
       <Sidebar open={sidebarOpen} onClose={()=>setSidebarOpen(false)} user={user} navigate={navigate}/>
 
       {/* ── FIXED HEADER ────────────────────────────── */}
-      <div className="app-header" ref={headerRef}>
+      <div className="app-header">
         {/* TopBar */}
         <div style={{ padding:"10px 16px", display:"flex", alignItems:"center", gap:10 }}>
           {searchOpen ? (
@@ -439,6 +423,8 @@ export default function MarketPage({ cartCount, user }) {
           })}
         </div>
       </div>
+
+      <div className="page-body">
 
       {/* ── BANNER SLIDER — same as מסעדות ──────────── */}
       {!searchQ && (
@@ -526,12 +512,8 @@ export default function MarketPage({ cartCount, user }) {
         </>
       )}
 
+      </div>{/* end page-body */}
+
       <BottomNav cartCount={cartCount}/>
-      <style>{`
-        @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        *{box-sizing:border-box}::-webkit-scrollbar{display:none}
-      `}</style>
-    </div>
   );
 }
