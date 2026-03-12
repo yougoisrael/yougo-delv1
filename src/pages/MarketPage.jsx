@@ -4,25 +4,215 @@ import { supabase } from "../lib/supabase";
 import {
   C, hexA,
   IcoSearch, IcoClose, IcoHome, IcoChevDown, IcoShield,
-  IcoStar, IcoPin, IcoFork, IcoStore, IcoUser, IcoBack,
+  IcoPin, IcoFork, IcoStore, IcoUser, IcoBack,
   IcoPackage, IcoCreditCard, IcoUsers, IcoHelp, IcoLock,
-  IcoClock, IcoTruck, IcoOrders,
+  IcoClock,
 } from "../components/Icons";
 import BottomNav from "../components/BottomNav";
 
 function YougoLogo({ size = 36, white = false }) {
-  const bg = white ? "white" : C.red;
-  const fg = white ? C.red : "white";
+  const bg = white ? "white" : C.red, fg = white ? C.red : "white";
   return (
     <svg width={size} height={size} viewBox="0 0 60 60" fill="none">
-      <rect width="60" height="60" rx="16" fill={bg} />
-      <path d="M12 42V20l16 16V20" stroke={fg} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M34 30h16M42 24l8 6-8 6" stroke={fg} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      <rect width="60" height="60" rx="16" fill={bg}/>
+      <path d="M12 42V20l16 16V20" stroke={fg} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M34 30h16M42 24l8 6-8 6" stroke={fg} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
 
-// ── Store Card — EXACT same design as RestCardH in HomePage ──
+// ══════════════════════════════════════════════════
+// MARKET CATEGORY ICONS — Professional SVG
+// ══════════════════════════════════════════════════
+
+function IcoAll({ active }) {
+  const a = active ? "white" : C.red;
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      <path d="M7 9h4.5l5.5 17h10l5-13H14" stroke={a} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      <circle cx="17" cy="31" r="2.5" fill={a}/>
+      <circle cx="27" cy="31" r="2.5" fill={a}/>
+    </svg>
+  );
+}
+
+function IcoSupermarket({ active }) {
+  const shelf = active ? "white" : "#16A34A";
+  const prod  = active ? "rgba(255,255,255,0.7)" : "#FCD34D";
+  const prod2 = active ? "rgba(255,255,255,0.5)" : "#F97316";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* building */}
+      <rect x="5" y="12" width="30" height="22" rx="2" fill={active ? "rgba(255,255,255,0.15)" : "#DCFCE7"}/>
+      {/* shelves */}
+      <rect x="5" y="18" width="30" height="2" rx="1" fill={shelf}/>
+      <rect x="5" y="26" width="30" height="2" rx="1" fill={shelf}/>
+      {/* products shelf 1 */}
+      <rect x="9"  y="13" width="5" height="5" rx="1.5" fill={prod}/>
+      <rect x="16" y="13" width="5" height="5" rx="1.5" fill={prod2}/>
+      <rect x="23" y="13" width="5" height="5" rx="1.5" fill={shelf}/>
+      {/* products shelf 2 */}
+      <rect x="9"  y="21" width="5" height="5" rx="1.5" fill={prod2}/>
+      <rect x="16" y="21" width="5" height="5" rx="1.5" fill={shelf}/>
+      <rect x="23" y="21" width="5" height="5" rx="1.5" fill={prod}/>
+      {/* roof sign */}
+      <rect x="5" y="8" width="30" height="5" rx="2" fill={shelf}/>
+      <circle cx="20" cy="10" r="1.5" fill={active ? "rgba(255,255,255,0.8)" : "white"}/>
+    </svg>
+  );
+}
+
+function IcoPharmacy({ active }) {
+  const cross = active ? "white" : "#2563EB";
+  const bg_   = active ? "rgba(255,255,255,0.15)" : "#DBEAFE";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* building */}
+      <rect x="7" y="10" width="26" height="25" rx="3" fill={bg_}/>
+      {/* cross */}
+      <rect x="17" y="15" width="6" height="16" rx="2" fill={cross}/>
+      <rect x="12" y="20" width="16" height="6" rx="2" fill={cross}/>
+      {/* roof */}
+      <rect x="7" y="6" width="26" height="5" rx="2" fill={cross}/>
+    </svg>
+  );
+}
+
+function IcoPet({ active }) {
+  const brown = active ? "white" : "#7C3AED";
+  const light = active ? "rgba(255,255,255,0.6)" : "#C4B5FD";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* dog body */}
+      <ellipse cx="22" cy="26" rx="11" ry="8" fill={brown}/>
+      {/* head */}
+      <circle cx="33" cy="18" r="7" fill={brown}/>
+      {/* ear */}
+      <ellipse cx="37" cy="13" rx="3" ry="5" fill={light} transform="rotate(20 37 13)"/>
+      {/* eye */}
+      <circle cx="35" cy="17" r="1.5" fill={active ? "rgba(0,0,0,0.3)" : "#1E1B4B"}/>
+      {/* nose */}
+      <ellipse cx="38" cy="20" rx="2" ry="1.5" fill={active ? "rgba(0,0,0,0.25)" : "#4C1D95"}/>
+      {/* tail */}
+      <path d="M11 22c-4-2-6-6-4-8s5 0 4 4" fill={light}/>
+      {/* paw */}
+      <ellipse cx="16" cy="33" rx="3" ry="2" fill={light}/>
+      <ellipse cx="26" cy="34" rx="3" ry="2" fill={light}/>
+    </svg>
+  );
+}
+
+function IcoFlowers({ active }) {
+  const pink   = active ? "white" : "#DB2777";
+  const yellow = active ? "rgba(255,255,255,0.8)" : "#FCD34D";
+  const green  = active ? "rgba(255,255,255,0.5)" : "#16A34A";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* stem */}
+      <path d="M20 38V20" stroke={green} strokeWidth="2.5" strokeLinecap="round"/>
+      {/* leaf */}
+      <path d="M20 28c-4-1-6-4-4-6 2-1 5 1 4 6z" fill={green}/>
+      {/* petals */}
+      <circle cx="20" cy="14" r="4" fill={pink}/>
+      <circle cx="26" cy="18" r="3.5" fill={pink}/>
+      <circle cx="14" cy="18" r="3.5" fill={pink}/>
+      <circle cx="25" cy="11" r="3.5" fill={pink}/>
+      <circle cx="15" cy="11" r="3.5" fill={pink}/>
+      {/* center */}
+      <circle cx="20" cy="14" r="3" fill={yellow}/>
+    </svg>
+  );
+}
+
+function IcoElectronics({ active }) {
+  const dark  = active ? "white" : "#0F172A";
+  const light = active ? "rgba(255,255,255,0.4)" : "#94A3B8";
+  const blue  = active ? "rgba(255,255,255,0.7)" : "#3B82F6";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* laptop base */}
+      <rect x="6" y="10" width="28" height="20" rx="3" fill={dark}/>
+      {/* screen */}
+      <rect x="9" y="13" width="22" height="14" rx="2" fill={blue}/>
+      {/* keyboard base */}
+      <rect x="3" y="30" width="34" height="4" rx="2" fill={dark}/>
+      {/* wifi signal on screen */}
+      <path d="M16 23c2-2 6-2 8 0" stroke={active ? "rgba(0,0,0,0.3)" : "white"} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      <path d="M18 21c1-1 3-1 4 0" stroke={active ? "rgba(0,0,0,0.3)" : "white"} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      <circle cx="20" cy="25" r="1.5" fill={active ? "rgba(0,0,0,0.3)" : "white"}/>
+    </svg>
+  );
+}
+
+function IcoFashion({ active }) {
+  const purple = active ? "white" : "#9333EA";
+  const light  = active ? "rgba(255,255,255,0.5)" : "#E9D5FF";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* shirt body */}
+      <path d="M14 8l-8 8 5 2v16h18V18l5-2-8-8" fill={purple}/>
+      {/* collar */}
+      <path d="M14 8c0 4 12 4 12 0" fill={light}/>
+      {/* button line */}
+      <line x1="20" y1="12" x2="20" y2="34" stroke={light} strokeWidth="1.2" strokeDasharray="2 2"/>
+    </svg>
+  );
+}
+
+function IcoBakery({ active }) {
+  const bread  = active ? "white" : "#B45309";
+  const light  = active ? "rgba(255,255,255,0.6)" : "#FCD34D";
+  const steam  = active ? "rgba(255,255,255,0.4)" : "#D1D5DB";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* steam */}
+      <path d="M14 8c0-2 2-2 2-4" stroke={steam} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      <path d="M20 6c0-2 2-2 2-4" stroke={steam} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      <path d="M26 8c0-2 2-2 2-4" stroke={steam} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      {/* bread loaf */}
+      <path d="M8 28c0-8 6-14 12-14s12 6 12 14H8z" fill={bread}/>
+      <rect x="8" y="28" width="24" height="7" rx="3" fill={bread}/>
+      {/* score lines */}
+      <path d="M14 22c2-3 10-3 12 0" stroke={light} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+
+function IcoBeauty({ active }) {
+  const pink   = active ? "white" : "#E11D48";
+  const light  = active ? "rgba(255,255,255,0.6)" : "#FECDD3";
+  const gold   = active ? "rgba(255,255,255,0.8)" : "#F59E0B";
+  return (
+    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+      {/* lipstick tube */}
+      <rect x="16" y="20" width="8" height="16" rx="3" fill={pink}/>
+      {/* lipstick top */}
+      <path d="M16 20c0-5 8-5 8 0" fill={gold}/>
+      {/* cap */}
+      <rect x="15" y="28" width="10" height="4" rx="1" fill={light}/>
+      {/* sparkles */}
+      <circle cx="10" cy="12" r="2" fill={pink}/>
+      <circle cx="30" cy="10" r="2.5" fill={gold}/>
+      <circle cx="8" cy="22" r="1.5" fill={light}/>
+      <path d="M28 18l2-2M28 22l2 2" stroke={pink} strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// ── Category config ──────────────────────────────
+const MKTCATS = [
+  { id:"all",          Cmp:IcoAll,          label:"הכל",             bg:"#C8102E",  match:null },
+  { id:"supermarket",  Cmp:IcoSupermarket,  label:"סופרמרקטים",     bg:"#16A34A",  match:/supermarket/i },
+  { id:"pharmacy",     Cmp:IcoPharmacy,     label:"בתי מרקחת",      bg:"#2563EB",  match:/pharmacy/i },
+  { id:"pet",          Cmp:IcoPet,          label:"חנויות חיות",     bg:"#7C3AED",  match:/pet/i },
+  { id:"flowers",      Cmp:IcoFlowers,      label:"פרחים ומתנות",    bg:"#DB2777",  match:/flowers/i },
+  { id:"electronics",  Cmp:IcoElectronics,  label:"אלקטרוניקה",     bg:"#0F172A",  match:/electronics/i },
+  { id:"fashion",      Cmp:IcoFashion,      label:"אופנה",           bg:"#9333EA",  match:/fashion/i },
+  { id:"bakery",       Cmp:IcoBakery,       label:"מאפיות",          bg:"#B45309",  match:/bakery/i },
+  { id:"beauty",       Cmp:IcoBeauty,       label:"יופי ובריאות",    bg:"#E11D48",  match:/beauty/i },
+];
+
+// ── Store Card — same as RestCardH in HomePage ──
 function StoreCard({ s, onClick, delay }) {
   const [pressed, setPressed] = useState(false);
   return (
@@ -45,12 +235,13 @@ function StoreCard({ s, onClick, delay }) {
       <div style={{
         height:110,
         background: s.image_url ? "transparent"
-          : `linear-gradient(135deg,${hexA(s.color||s.cover_color||"#C8102E","33")},${hexA(s.color||s.cover_color||"#C8102E","55")})`,
-        display:"flex", alignItems:"center", justifyContent:"center", position:"relative", overflow:"hidden",
+          : `linear-gradient(135deg,${hexA(s.cover_color||s.color||"#C8102E","33")},${hexA(s.cover_color||s.color||"#C8102E","55")})`,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        position:"relative", overflow:"hidden",
       }}>
         {s.image_url
           ? <img src={s.image_url} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt={s.name}/>
-          : <span style={{ fontSize:52 }}>{s.emoji || s.logo_emoji || "🏪"}</span>
+          : <span style={{ fontSize:52 }}>{s.logo_emoji || "🏪"}</span>
         }
         {s.active === false && (
           <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -77,123 +268,75 @@ function StoreCard({ s, onClick, delay }) {
           </span>
         </div>
         <div style={{ marginTop:6, display:"flex", alignItems:"center", gap:4 }}>
-          <span style={{ width:6, height:6, borderRadius:"50%", background: s.active !== false ? C.green : "#EF4444", display:"inline-block" }}/>
-          <span style={{ fontSize:10, color: s.active !== false ? C.green : "#EF4444", fontWeight:700 }}>{s.active !== false ? "פתוח" : "סגור"}</span>
+          <span style={{ width:6, height:6, borderRadius:"50%", background: s.active!==false ? C.green : "#EF4444", display:"inline-block" }}/>
+          <span style={{ fontSize:10, color: s.active!==false ? C.green : "#EF4444", fontWeight:700 }}>{s.active!==false ? "פתוח" : "סגור"}</span>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Market Category Icons — Professional SVG ──────
-function MktAll({ active }) {
-  const c = active ? "white" : null;
+// ── Carousel Row ─────────────────────────────────
+function CarouselRow({ title, icon, items, onSeeAll }) {
+  if (!items.length) return null;
   return (
-    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
-      {/* Shopping cart */}
-      <path d="M6 8h4l5 16h14l4-10H11" stroke={c || C.red} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <circle cx="16" cy="29" r="2.5" fill={c || C.red}/>
-      <circle cx="26" cy="29" r="2.5" fill={c || C.red}/>
-    </svg>
+    <div style={{ marginBottom:24 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"0 16px", marginBottom:10 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          {icon}
+          <span style={{ fontSize:16, fontWeight:900, color:C.dark }}>{title}</span>
+        </div>
+        {onSeeAll && <span onClick={onSeeAll} style={{ fontSize:12, color:C.red, fontWeight:700, cursor:"pointer" }}>הכל ←</span>}
+      </div>
+      <div style={{
+        display:"flex", gap:12, overflowX:"auto", overflowY:"visible",
+        paddingTop:4, paddingBottom:12,
+        paddingInlineStart:16, paddingInlineEnd:16,
+        scrollbarWidth:"none", WebkitOverflowScrolling:"touch",
+      }}>
+        {items.map((s, i) => (
+          <StoreCard key={s.id} s={s} delay={i*50} onClick={() => {}}/>
+        ))}
+      </div>
+    </div>
   );
 }
-function MktFruits({ active }) {
-  const green = active ? "white" : "#16A34A";
-  const red   = active ? "rgba(255,255,255,0.85)" : "#EF4444";
-  const yel   = active ? "rgba(255,255,255,0.7)"  : "#FCD34D";
-  return (
-    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
-      {/* Apple */}
-      <path d="M20 11c-1-3 2-5 4-4" stroke={green} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-      <path d="M12 17c0-4 3-7 8-7s8 3 8 7c0 8-4 14-8 14s-8-6-8-14z" fill={red}/>
-      {/* Highlight */}
-      <ellipse cx="16" cy="20" rx="2" ry="3.5" fill="rgba(255,255,255,0.25)" transform="rotate(-15 16 20)"/>
-      {/* Leaf */}
-      <path d="M20 11c2-3 6-2 5 1-1 2-4 2-5-1z" fill={green}/>
-    </svg>
-  );
-}
-function MktMeat({ active }) {
-  const meat = active ? "white" : "#C8102E";
-  const bone = active ? "rgba(255,255,255,0.6)" : "#FCD34D";
-  return (
-    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
-      {/* Leg shape */}
-      <path d="M10 30c-3-3-2-7 1-9l14-14c2-2 6-3 9-1s3 6 1 9L21 29c-2 2-6 3-9 1z" fill={meat}/>
-      {/* Bone knob top */}
-      <circle cx="31" cy="9" r="4" fill={bone}/>
-      {/* Bone knob bottom */}
-      <circle cx="9" cy="31" r="4" fill={bone}/>
-      {/* Shine */}
-      <ellipse cx="17" cy="17" rx="3" ry="6" fill="rgba(255,255,255,0.2)" transform="rotate(-45 17 17)"/>
-    </svg>
-  );
-}
-function MktSnacks({ active }) {
-  const bag  = active ? "white" : "#F59E0B";
-  const text = active ? "rgba(255,255,255,0.5)" : "#D97706";
-  return (
-    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
-      {/* Chip bag shape */}
-      <path d="M12 8l4 3h8l4-3 2 10-2 2-4 3h-8l-4-3-2-2L12 8z" fill={bag}/>
-      <path d="M14 18l4 4h4l4-4" fill={text}/>
-      {/* Bag bottom */}
-      <path d="M14 23l-2 9h16l-2-9H14z" fill={bag}/>
-      {/* Fold line */}
-      <path d="M12 18h16" stroke={text} strokeWidth="1.5"/>
-    </svg>
-  );
-}
-function MktDairy({ active }) {
-  const white_ = active ? "rgba(255,255,255,0.9)" : "#DBEAFE";
-  const blue   = active ? "rgba(255,255,255,0.6)" : "#3B82F6";
-  return (
-    <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
-      {/* Milk carton */}
-      <rect x="11" y="16" width="18" height="20" rx="2" fill={white_}/>
-      {/* Carton top/roof */}
-      <path d="M11 16l9-9 9 9H11z" fill={blue}/>
-      {/* Label stripe */}
-      <rect x="11" y="24" width="18" height="6" fill={blue} opacity="0.35"/>
-      {/* Milk dots */}
-      <circle cx="17" cy="21" r="1.5" fill={blue} opacity="0.5"/>
-      <circle cx="20" cy="21" r="1.5" fill={blue} opacity="0.5"/>
-      <circle cx="23" cy="21" r="1.5" fill={blue} opacity="0.5"/>
-    </svg>
-  );
-}
-
-const MKTCATS = [
-  { id:"all",    Cmp:MktAll,    label:"מרקט",          bg:"#C8102E" },
-  { id:"fruits", Cmp:MktFruits, label:"פירות וירקות",  bg:"#16A34A" },
-  { id:"meat",   Cmp:MktMeat,   label:"דגים ובשרים",   bg:"#C8102E" },
-  { id:"snacks", Cmp:MktSnacks, label:"חטיפים",         bg:"#F59E0B" },
-  { id:"dairy",  Cmp:MktDairy,  label:"מוצרי חלב",     bg:"#3B82F6" },
-];
 
 export default function MarketPage({ cartCount, user }) {
   const navigate = useNavigate();
-  const [stores, setStores] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [mktCat, setMktCat] = useState("all");
+  const [stores, setStores]         = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [mktCat, setMktCat]         = useState("all");
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQ, setSearchQ] = useState("");
+  const [searchQ, setSearchQ]       = useState("");
 
   useEffect(() => {
     supabase.from("restaurants")
       .select("*")
       .eq("active", true)
+      .eq("page_type", "market")          // ← only market stores
       .then(({ data }) => { setStores(data || []); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        // fallback: load all if page_type column doesn't exist yet
+        supabase.from("restaurants").select("*").eq("active", true)
+          .then(({ data }) => { setStores(data || []); setLoading(false); });
+      });
   }, []);
 
   const filtered = stores.filter(s => {
     if (searchQ) return s.name?.includes(searchQ) || s.category?.includes(searchQ);
-    return true;
+    if (mktCat === "all") return true;
+    const cat = MKTCATS.find(c => c.id === mktCat);
+    return cat?.match ? cat.match.test(s.category || "") : true;
   });
 
-  // ── Sidebar ──
+  const catGroups = MKTCATS.filter(c => c.id !== "all").map(c => ({
+    ...c,
+    items: stores.filter(s => c.match ? c.match.test(s.category || "") : false),
+  })).filter(g => g.items.length > 0);
+
+  // ── Sidebar ──────────────────────────────────────
   const Sidebar = () => (
     <>
       <div onClick={() => setSidebarOpen(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", zIndex:600, opacity:sidebarOpen?1:0, pointerEvents:sidebarOpen?"all":"none", transition:"opacity 0.3s ease" }}/>
@@ -208,7 +351,7 @@ export default function MarketPage({ cartCount, user }) {
           <div style={{ color:"white", fontSize:18, fontWeight:900 }}>{user?.name || "אורח"}</div>
           <div style={{ color:"rgba(255,255,255,0.7)", fontSize:12, marginTop:2 }}>{user?.email || "התחבר לחשבון שלך"}</div>
         </div>
-        <div style={{ flex:1, padding:"12px 0" }}>
+        <div style={{ flex:1, padding:"12px 0", overflowY:"auto" }}>
           {[
             { icon:<IcoUser s={20} c={C.red}/>, label:"הפרופיל שלי", path:"/profile" },
             { icon:<IcoPackage s={20} c={C.red}/>, label:"ההזמנות שלי", path:"/orders" },
@@ -235,13 +378,11 @@ export default function MarketPage({ cartCount, user }) {
   );
 
   return (
-    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", overflowX:"hidden", paddingBottom:90, paddingTop:106 }}>
+    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:90, paddingTop:106 }}>
       <Sidebar/>
 
       {/* FIXED HEADER: TopBar + Tabs */}
       <div className="app-header">
-
-        {/* TOP BAR */}
         <div style={{ padding:"10px 16px", display:"flex", alignItems:"center", gap:10 }}>
           {searchOpen ? (
             <div style={{ flex:1, display:"flex", gap:8, alignItems:"center" }}>
@@ -272,24 +413,17 @@ export default function MarketPage({ cartCount, user }) {
             </>
           )}
         </div>
-
-        {/* TABS */}
         <div style={{ display:"flex", borderBottom:"1px solid "+C.lightGray }}>
-          {[
-            { id:"restaurants", label:"מסעדות", I:IcoFork },
-            { id:"market",      label:"מרקט",   I:IcoStore },
-          ].map(t => {
+          {[{ id:"restaurants", label:"מסעדות", I:IcoFork }, { id:"market", label:"מרקט", I:IcoStore }].map(t => {
             const active = t.id === "market";
             return (
-              <button key={t.id}
-                onClick={() => t.id === "restaurants" && navigate("/")}
+              <button key={t.id} onClick={() => t.id === "restaurants" && navigate("/")}
                 style={{ flex:1, background:"none", border:"none", padding:"11px 0 8px", fontSize:13, fontWeight:700, color:active?C.red:C.gray, borderBottom:active?"2.5px solid "+C.red:"2.5px solid transparent", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
                 <t.I s={18} c={active?C.red:C.gray}/>{t.label}
               </button>
             );
           })}
         </div>
-
       </div>
 
       {/* MARKET HERO */}
@@ -302,87 +436,69 @@ export default function MarketPage({ cartCount, user }) {
         <div style={{ color:"rgba(255,255,255,0.8)", fontSize:13, marginTop:3 }}>כל מה שחסר בבית מגיע בחצי שעה</div>
       </div>
 
-      {/* CATEGORY ICONS */}
+      {/* CATEGORY FILTER ICONS */}
       <div style={{ padding:"14px 0 4px" }}>
-        <div style={{ display:"flex", gap:10, overflowX:"auto", padding:"4px 16px", scrollbarWidth:"none" }}>
+        <div style={{ display:"flex", gap:10, overflowX:"auto", paddingInlineStart:16, paddingInlineEnd:16, paddingBottom:4, scrollbarWidth:"none" }}>
           {MKTCATS.map(c => {
             const active = mktCat === c.id;
             return (
-              <button key={c.id} onClick={() => setMktCat(c.id)}
-                style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:5, background:active?C.red:C.white, border:active?"none":"1.5px solid "+C.lightGray, borderRadius:18, padding:"10px 14px", cursor:"pointer", flexShrink:0, transition:"all .2s", minWidth:76, boxShadow:active?"0 4px 14px rgba(200,16,46,0.3)":"0 1px 4px rgba(0,0,0,0.05)" }}>
+              <button key={c.id} onClick={() => setMktCat(c.id)} style={{
+                display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+                background: active ? c.bg : "white",
+                border: active ? "none" : "1.5px solid "+C.lightGray,
+                borderRadius:18, padding:"10px 14px",
+                cursor:"pointer", flexShrink:0,
+                transition:"all .2s cubic-bezier(0.34,1.3,0.64,1)",
+                minWidth:72,
+                boxShadow: active ? `0 4px 16px ${c.bg}44` : "0 1px 4px rgba(0,0,0,0.05)",
+                transform: active ? "scale(1.07)" : "scale(1)",
+              }}>
                 <c.Cmp active={active}/>
-                <span style={{ fontSize:10, fontWeight:700, color:active?"white":C.dark, whiteSpace:"nowrap" }}>{c.label}</span>
+                <span style={{ fontSize:9, fontWeight:700, color:active?"white":C.dark, whiteSpace:"nowrap" }}>{c.label}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* STORE CAROUSELS — same style as HomePage */}
-      <div style={{ paddingBottom: 8 }}>
-        {loading ? (
-          <div style={{ textAlign:"center", padding:40, color:C.gray }}>
-            <div style={{ width:36, height:36, borderRadius:"50%", border:"3px solid "+C.lightGray, borderTopColor:C.red, animation:"spin .7s linear infinite", margin:"0 auto 12px" }}/>
-            טוען חנויות...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign:"center", padding:"50px 0", color:C.gray }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>🏪</div>
-            <div style={{ fontSize:15, fontWeight:600 }}>אין חנויות זמינות</div>
-          </div>
-        ) : (() => {
-          // Build category groups like HomePage
-          const catGroups = MKTCATS.filter(c => c.id !== "all").map(c => {
-            const items = filtered.filter(s =>
-              (s.category||"").toLowerCase().includes(c.id) ||
-              (s.tags||[]).includes(c.id)
-            );
-            return { ...c, items };
-          }).filter(g => g.items.length > 0);
-
-          const CarouselRow = ({ title, items, icon, onSeeAll }) => (
-            <div style={{ marginBottom:24 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 16px 10px" }}>
-                <span style={{ fontSize:16, fontWeight:900, color:C.dark, display:"flex", alignItems:"center", gap:8 }}>
-                  {icon}
-                  {title}
-                </span>
-                {onSeeAll && <span onClick={onSeeAll} style={{ fontSize:12, color:C.red, fontWeight:700, cursor:"pointer" }}>הכל ←</span>}
-              </div>
-              <div style={{
-                display:"flex", gap:12, overflowX:"auto", overflowY:"visible",
-                paddingTop:4, paddingBottom:12,
-                paddingInlineStart:16, paddingInlineEnd:16,
-                scrollbarWidth:"none", WebkitOverflowScrolling:"touch",
-              }}>
-                {items.map((s, i) => (
-                  <StoreCard key={s.id} s={s} onClick={() => navigate("/restaurant/"+s.id, { state:s })} delay={i*50}/>
-                ))}
-              </div>
-            </div>
-          );
-
-          return (
-            <>
-              {/* All stores row */}
-              <CarouselRow
-                title="🔥 כל החנויות"
-                items={filtered}
-                onSeeAll={null}
-              />
-              {/* Per-category rows */}
-              {catGroups.map(g => (
-                <CarouselRow
-                  key={g.id}
-                  title={g.label}
-                  icon={<g.Cmp active={false}/>}
-                  items={g.items}
-                />
-              ))}
-            </>
-          );
-        })()}
-      </div>
+      {/* CONTENT */}
+      {loading ? (
+        <div style={{ textAlign:"center", padding:50, color:C.gray }}>
+          <div style={{ width:36, height:36, borderRadius:"50%", border:"3px solid "+C.lightGray, borderTopColor:C.red, animation:"spin .7s linear infinite", margin:"0 auto 12px" }}/>
+          טוען חנויות...
+        </div>
+      ) : filtered.length === 0 && mktCat !== "all" ? (
+        <div style={{ textAlign:"center", padding:"50px 0", color:C.gray }}>
+          <div style={{ fontSize:40, marginBottom:12 }}>🏪</div>
+          <div style={{ fontSize:15, fontWeight:600 }}>אין חנויות בקטגוריה זו</div>
+        </div>
+      ) : mktCat !== "all" ? (
+        // ── Single category view ──
+        <CarouselRow
+          title={MKTCATS.find(c=>c.id===mktCat)?.label || ""}
+          icon={(() => { const Cat = MKTCATS.find(c=>c.id===mktCat)?.Cmp; return Cat ? <Cat active={false}/> : null; })()}
+          items={filtered}
+          onSeeAll={null}
+        />
+      ) : (
+        // ── All categories — one row per category ──
+        <>
+          <CarouselRow
+            title="🔥 כל החנויות"
+            items={stores}
+            onSeeAll={null}
+          />
+          {catGroups.map(g => (
+            <CarouselRow
+              key={g.id}
+              title={g.label}
+              icon={<g.Cmp active={false}/>}
+              items={g.items}
+              onSeeAll={() => setMktCat(g.id)}
+            />
+          ))}
+        </>
+      )}
 
       <BottomNav cartCount={cartCount}/>
       <style>{`
