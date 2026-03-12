@@ -354,7 +354,7 @@ function RestCardH({ r, onClick, delay }) {
         boxShadow: pressed?"0 2px 8px rgba(0,0,0,0.1)":"0 4px 16px rgba(0,0,0,0.08)",
         transform: pressed?"scale(0.96)":"scale(1)",
         transition:"transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease",
-        animation:`slideUp 0.4s cubic-bezier(0.34,1.2,0.64,1) ${delay}ms both`,
+        animation:`fadeIn 0.4s ease ${delay}ms both`,
       }}
     >
       <div style={{ height:110, background:`linear-gradient(135deg,${hexA(r.cover_color||"#C8102E","33")},${hexA(r.cover_color||"#C8102E","55")})`, display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
@@ -408,7 +408,7 @@ function RestCardV({ r, onClick, delay }) {
         boxShadow: pressed?"0 2px 8px rgba(0,0,0,0.08)":"0 4px 20px rgba(0,0,0,0.07)",
         transform: pressed?"scale(0.98)":"scale(1)",
         transition:"transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease",
-        animation:`slideUp 0.4s cubic-bezier(0.34,1.2,0.64,1) ${delay}ms both`,
+        animation:`fadeIn 0.4s ease ${delay}ms both`,
       }}
     >
       <div style={{ height:130, background:`linear-gradient(135deg,${hexA(r.cover_color||"#C8102E","22")},${hexA(r.cover_color||"#C8102E","44")})`, display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
@@ -673,7 +673,6 @@ export default function HomePage({ user, guest, cartCount }) {
       )}
 
       <BottomNav cartCount={cartCount} />
-      <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}@keyframes spin{to{transform:rotate(360deg)}}::-webkit-scrollbar{display:none}`}</style>
     </div>
   );
 }
