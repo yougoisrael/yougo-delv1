@@ -259,7 +259,7 @@ function Sidebar({ open, onClose, user, navigate }) {
         </div>
 
         {/* Menu items */}
-        <div style={{ flex:1, padding:"12px 0", overflowY:"auto" }}>
+        <div style={{ flex:1, padding:"12px 0" }}>
           {[
             { icon:<IcoUser s={20} c={C.red}/>,      label:"הפרופיל שלי",    path:"/profile" },
             { icon:<IcoPackage s={20} c={C.red}/>,   label:"ההזמנות שלי",   path:"/orders" },
@@ -465,6 +465,16 @@ export default function HomePage({ user, guest, cartCount }) {
   const [cat, setCat] = useState("all");
   const [banner, setBanner] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [headerH, setHeaderH] = useState(106);
+  const headerRef = useRef(null);
+
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const ro = new ResizeObserver(() => setHeaderH(headerRef.current?.offsetHeight||106));
+    ro.observe(headerRef.current);
+    setHeaderH(headerRef.current.offsetHeight||106);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const t = setInterval(() => setBanner(p => (p+1) % BANNERS.length), 3800);
@@ -494,13 +504,13 @@ export default function HomePage({ user, guest, cartCount }) {
   })).filter(g => g.items.length > 0);
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100dvh", fontFamily:"Arial,sans-serif", direction:"rtl", background:C.bg }}>
+    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:90, paddingTop:headerH }}>
 
       {/* SIDEBAR */}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} user={user} navigate={navigate} />
 
       {/* FIXED HEADER: TopBar + Tabs */}
-      <div className="app-header">
+      <div className="app-header" ref={headerRef}>
 
         {/* TOP BAR */}
         <div style={{ padding:"10px 16px", display:"flex", alignItems:"center", gap:10 }}>
@@ -549,8 +559,6 @@ export default function HomePage({ user, guest, cartCount }) {
         </div>
 
       </div>
-
-      <div className="page-body">
 
       {/* BANNER */}
       {!searchQ && (
@@ -664,9 +672,8 @@ export default function HomePage({ user, guest, cartCount }) {
         </div>
       )}
 
-      </div>{/* end page-body */}
-
       <BottomNav cartCount={cartCount} />
+      <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}@keyframes spin{to{transform:rotate(360deg)}}::-webkit-scrollbar{display:none}`}</style>
     </div>
   );
 }
