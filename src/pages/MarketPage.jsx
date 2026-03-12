@@ -389,7 +389,7 @@ export default function MarketPage({ cartCount, user }) {
   );
 
   return (
-    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:140, paddingTop:106 }}>
+    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:140, paddingTop:160 }}>
 
       <Sidebar open={sidebarOpen} onClose={()=>setSidebarOpen(false)} user={user} navigate={navigate}/>
 
