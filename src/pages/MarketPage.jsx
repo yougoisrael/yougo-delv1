@@ -207,7 +207,7 @@ function StoreCard({ s, onClick, delay }) {
       onMouseUp={() => setPressed(false)}
       style={{
         flexShrink:0, width:200, background:"white", borderRadius:22,
-        overflowY:"auto", cursor:"pointer",
+        overflow:"hidden", cursor:"pointer",
         boxShadow: pressed ? "0 2px 8px rgba(0,0,0,0.1)" : "0 4px 16px rgba(0,0,0,0.08)",
         transform: pressed ? "scale(0.96)" : "scale(1)",
         transition:"transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease",
@@ -290,8 +290,8 @@ function HorizRow({ title, icon, items, onSeeAll, navigate }) {
 function Sidebar({ open, onClose, user, navigate }) {
   return (
     <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", zIndex:10000, opacity:open?1:0, pointerEvents:open?"all":"none", transition:"opacity 0.3s ease" }}/>
-      <div style={{ position:"fixed", top:0, right:0, height:"100dvh", width:280, maxWidth:"80vw", background:"white", zIndex:10001, display:"flex", flexDirection:"column", transform:open?"translateX(0)":"translateX(100%)", transition:"transform 0.35s cubic-bezier(0.34,1.1,0.64,1)", boxShadow:"-8px 0 40px rgba(0,0,0,0.15)" }}>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", zIndex:600, opacity:open?1:0, pointerEvents:open?"all":"none", transition:"opacity 0.3s ease" }}/>
+      <div style={{ position:"fixed", top:0, right:0, height:"100dvh", width:280, maxWidth:"80vw", background:"white", zIndex:601, display:"flex", flexDirection:"column", transform:open?"translateX(0)":"translateX(100%)", transition:"transform 0.35s cubic-bezier(0.34,1.1,0.64,1)", boxShadow:"-8px 0 40px rgba(0,0,0,0.15)" }}>
         <div style={{ background:"linear-gradient(135deg,#C8102E,#7B0D1E)", padding:"calc(env(safe-area-inset-top,0px) + 54px) 20px 24px", position:"relative", flexShrink:0 }}>
           <button onClick={onClose} style={{ position:"absolute", top:14, left:14, background:"rgba(255,255,255,0.15)", border:"none", borderRadius:"50%", width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
             <IcoBack s={16} c="white"/>
@@ -302,7 +302,7 @@ function Sidebar({ open, onClose, user, navigate }) {
           <div style={{ color:"white", fontSize:18, fontWeight:900 }}>{user?.name||"אורח"}</div>
           <div style={{ color:"rgba(255,255,255,0.7)", fontSize:12, marginTop:2 }}>{user?.email||"התחבר לחשבון שלך"}</div>
         </div>
-        <div style={{ flex:1, padding:"12px 0", overflowY:"auto" }}>
+        <div style={{ flex:1, padding:"12px 0", overflowY:"auto", overflowY:"auto" }}>
           {[
             { icon:<IcoUser s={20} c={C.red}/>,       label:"הפרופיל שלי",    path:"/profile" },
             { icon:<IcoPackage s={20} c={C.red}/>,    label:"ההזמנות שלי",    path:"/orders" },
@@ -342,12 +342,6 @@ export default function MarketPage({ cartCount, user }) {
   const [searchOpen, setSearchOpen]     = useState(false);
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [searchQ, setSearchQ]           = useState("");
-
-  // Lock body scroll when sidebar open
-  useEffect(() => {
-    document.body.style.overflow = sidebarOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [sidebarOpen]);
   const [banner, setBanner]             = useState(0);
   const [headerH, setHeaderH]           = useState(106);
   const headerRef                       = useRef(null);
