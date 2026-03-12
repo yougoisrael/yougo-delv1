@@ -343,16 +343,7 @@ export default function MarketPage({ cartCount, user }) {
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [searchQ, setSearchQ]           = useState("");
   const [banner, setBanner]             = useState(0);
-  const [headerH, setHeaderH]           = useState(106);
-  const headerRef                       = useRef(null);
 
-  useEffect(() => {
-    if (!headerRef.current) return;
-    const ro = new ResizeObserver(() => setHeaderH(headerRef.current?.offsetHeight||106));
-    ro.observe(headerRef.current);
-    setHeaderH(headerRef.current.offsetHeight||106);
-    return () => ro.disconnect();
-  }, []);
 
   // Auto-advance banner
   useEffect(() => {
@@ -388,12 +379,12 @@ export default function MarketPage({ cartCount, user }) {
   );
 
   return (
-    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:90, paddingTop:headerH }}>
+    <div className="page-enter" style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:90, paddingTop:106 }}>
 
       <Sidebar open={sidebarOpen} onClose={()=>setSidebarOpen(false)} user={user} navigate={navigate}/>
 
       {/* ── FIXED HEADER ────────────────────────────── */}
-      <div className="app-header" ref={headerRef}>
+      <div className="app-header">
         {/* TopBar */}
         <div style={{ padding:"10px 16px", display:"flex", alignItems:"center", gap:10 }}>
           {searchOpen ? (
