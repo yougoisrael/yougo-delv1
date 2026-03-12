@@ -354,8 +354,8 @@ export default function RestaurantPage({ cart, add, rem, cartCount }) {
         </div>
       )}
 
-      {/* ── MENU CAROUSELS — horizontal per section ── */}
-      <div style={{ paddingBottom: 8 }}>
+      {/* ── MENU — 2-column grid per section ── */}
+      <div style={{ paddingBottom:8 }}>
         {loading ? (
           <div style={{ textAlign:"center", padding:50, color:"#9CA3AF" }}>
             <div style={{ width:36, height:36, borderRadius:"50%", border:"3px solid #E5E7EB", borderTopColor:C.red, animation:"spin .7s linear infinite", margin:"0 auto 12px" }}/>
@@ -370,9 +370,9 @@ export default function RestaurantPage({ cart, add, rem, cartCount }) {
           sections.filter(s => !activeSection || s === activeSection).map(section => {
             const items = menu.filter(m => m.category === section);
             return (
-              <div key={section} style={{ marginBottom:24 }}>
+              <div key={section} style={{ marginBottom:28 }}>
                 {/* Section header */}
-                <div style={{ display:"flex", alignItems:"center", gap:8, padding:"16px 16px 10px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, padding:"16px 16px 12px" }}>
                   <div style={{ width:4, height:22, borderRadius:2, background:C.red }}/>
                   <span style={{ fontSize:16, fontWeight:900, color:"#111827" }}>
                     {categoryEmoji(section, false)} {section}
@@ -381,25 +381,24 @@ export default function RestaurantPage({ cart, add, rem, cartCount }) {
                     {items.length} פריטים
                   </span>
                 </div>
-                {/* Horizontal scroll */}
+                {/* 2-column equal grid */}
                 <div style={{
-                  display:"flex", gap:12,
-                  overflowX:"auto", padding:"4px 16px 8px",
-                  scrollbarWidth:"none", WebkitOverflowScrolling:"touch",
-                  scrollSnapType:"x mandatory",
+                  display:"grid",
+                  gridTemplateColumns:"1fr 1fr",
+                  gap:12,
+                  padding:"0 16px",
                 }}>
                   {items.map((item, idx) => (
-                    <div key={item.id} style={{ scrollSnapAlign:"start", flexShrink:0, width:160 }}>
-                      <MenuCard
-                        item={item}
-                        qty={getQty(item.id)}
-                        onOpen={() => setSelectedItem(item)}
-                        onQuickAdd={() => add(item, r)}
-                        onRem={() => rem(item.id, id)}
-                        delay={idx * 40}
-                        coverColor={r.cover_color}
-                      />
-                    </div>
+                    <MenuCard
+                      key={item.id}
+                      item={item}
+                      qty={getQty(item.id)}
+                      onOpen={() => setSelectedItem(item)}
+                      onQuickAdd={() => add(item, r)}
+                      onRem={() => rem(item.id, id)}
+                      delay={idx * 40}
+                      coverColor={r.cover_color}
+                    />
                   ))}
                 </div>
               </div>
