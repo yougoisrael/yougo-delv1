@@ -484,7 +484,7 @@ export default function HomePage({ user, guest, cartCount }) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} user={user} navigate={navigate} />
 
       {/* FIXED HEADER — TopBar + TABS */}
-      <div style={{ position:"fixed", top:0, left:0, right:0, maxWidth:430, margin:"0 auto", zIndex:100, background:"white", boxShadow:"0 2px 10px rgba(0,0,0,0.07)" }}>
+      <div className="fixed-header">
         {/* TOP BAR */}
         <div style={{ padding:"10px 16px", display:"flex", alignItems:"center", gap:10 }}>
           {searchOpen ? (
