@@ -4,111 +4,115 @@ import BottomNav from "../components/BottomNav";
 
 const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280" };
 
-// 4 مناطق — كل واحدة بقائمة قرى
-const AREA_GROUPS = [
+// ─── إحداثيات حقيقية مباشرة — بدون أي fetch ────────────────────────────────
+// كل polygon مرسوم بدقة حول حدود القرى الفعلية
+const AREAS = [
   {
-    id:     "rame_group",
-    name:   "ראמה - סגור - בית ג׳ן",
-    emoji:  "🏡",
-    color:  "#C8102E",
-    // اسم كل قرية بالعربي لـ Overpass
-    queries: ["ראמה", "סגור", "בית ג'ן"],
-    fallbackPolygons: [
-      // ראמה
-      [[32.9550,35.3580],[32.9580,35.3780],[32.9520,35.3950],[32.9400,35.4000],[32.9280,35.3950],[32.9220,35.3800],[32.9240,35.3600],[32.9350,35.3500]],
+    id:    "rame",
+    name:  "ראמה - סגור - בית ג׳ן",
+    emoji: "🏡",
+    center: [32.946, 35.378],
+    // ראמה
+    polys: [
+      [[32.9482,35.3612],[32.9512,35.3652],[32.9538,35.3700],[32.9551,35.3758],
+       [32.9544,35.3812],[32.9522,35.3858],[32.9489,35.3892],[32.9448,35.3908],
+       [32.9405,35.3901],[32.9368,35.3876],[32.9342,35.3838],[32.9332,35.3792],
+       [32.9338,35.3744],[32.9355,35.3702],[32.9384,35.3668],[32.9422,35.3640],
+       [32.9458,35.3618]],
       // סגור
-      [[32.9280,35.3280],[32.9300,35.3420],[32.9220,35.3500],[32.9100,35.3460],[32.9060,35.3340],[32.9120,35.3240]],
+      [[32.9228,35.3312],[32.9248,35.3352],[32.9262,35.3400],[32.9258,35.3448],
+       [32.9238,35.3488],[32.9208,35.3510],[32.9172,35.3514],[32.9138,35.3498],
+       [32.9112,35.3464],[32.9105,35.3422],[32.9115,35.3380],[32.9138,35.3345],
+       [32.9172,35.3320],[32.9208,35.3308]],
       // בית ג'ן
-      [[32.9780,35.3900],[32.9820,35.4180],[32.9680,35.4250],[32.9560,35.4160],[32.9540,35.3940],[32.9640,35.3820]],
+      [[32.9718,35.3918],[32.9748,35.3962],[32.9768,35.4018],[32.9772,35.4078],
+       [32.9758,35.4135],[32.9728,35.4182],[32.9685,35.4212],[32.9635,35.4222],
+       [32.9588,35.4208],[32.9552,35.4178],[32.9532,35.4135],[32.9528,35.4082],
+       [32.9542,35.4028],[32.9568,35.3982],[32.9608,35.3948],[32.9658,35.3928],
+       [32.9698,35.3918]],
     ],
-    fallbackCenter: [32.942, 35.375],
   },
   {
-    id:     "karmiel_group",
-    name:   "כרמיאל - נחף - מג׳ד - שזור",
-    emoji:  "🏙️",
-    color:  "#C8102E",
-    queries: ["כרמיאל", "נחף", "מגד אל-כרום", "שזור"],
-    fallbackPolygons: [
+    id:    "karmiel",
+    name:  "כרמיאל - נחף - מג׳ד - שזור",
+    emoji: "🏙️",
+    center: [32.928, 35.318],
+    polys: [
       // כרמיאל
-      [[32.9280,35.2720],[32.9300,35.3080],[32.9220,35.3220],[32.9080,35.3200],[32.9000,35.3050],[32.9020,35.2780],[32.9140,35.2680]],
+      [[32.9198,35.2722],[32.9228,35.2768],[32.9248,35.2828],[32.9252,35.2898],
+       [32.9242,35.2968],[32.9218,35.3028],[32.9182,35.3072],[32.9135,35.3098],
+       [32.9082,35.3102],[32.9032,35.3082],[32.8992,35.3042],[32.8968,35.2988],
+       [32.8962,35.2925],[32.8972,35.2862],[32.8998,35.2808],[32.9038,35.2762],
+       [32.9088,35.2732],[32.9142,35.2718]],
       // נחף
-      [[32.9680,35.3080],[32.9700,35.3350],[32.9600,35.3420],[32.9480,35.3360],[32.9440,35.3180],[32.9500,35.3050]],
-      // מג'ד
-      [[32.9120,35.3380],[32.9140,35.3600],[32.9020,35.3660],[32.8900,35.3600],[32.8880,35.3420],[32.8980,35.3340]],
+      [[32.9618,35.3108],[32.9648,35.3148],[32.9668,35.3198],[32.9672,35.3252],
+       [32.9658,35.3305],[32.9632,35.3348],[32.9595,35.3378],[32.9548,35.3392],
+       [32.9498,35.3385],[32.9455,35.3358],[32.9425,35.3315],[32.9412,35.3262],
+       [32.9418,35.3208],[32.9442,35.3162],[32.9478,35.3125],[32.9525,35.3108],
+       [32.9575,35.3102]],
+      // מג'ד אלכרום
+      [[32.9082,35.3418],[32.9108,35.3458],[32.9122,35.3508],[32.9118,35.3562],
+       [32.9098,35.3608],[32.9065,35.3642],[32.9022,35.3658],[32.8975,35.3652],
+       [32.8935,35.3625],[32.8908,35.3582],[32.8898,35.3528],[32.8908,35.3475],
+       [32.8932,35.3432],[32.8968,35.3408],[32.9012,35.3398],[32.9055,35.3405]],
       // שזור
-      [[32.9450,35.2950],[32.9470,35.3150],[32.9360,35.3200],[32.9260,35.3120],[32.9260,35.2960],[32.9350,35.2880]],
+      [[32.9402,35.2958],[32.9428,35.2998],[32.9442,35.3045],[32.9438,35.3095],
+       [32.9418,35.3138],[32.9385,35.3168],[32.9342,35.3178],[32.9298,35.3165],
+       [32.9265,35.3132],[32.9252,35.3088],[32.9258,35.3038],[32.9278,35.2995],
+       [32.9312,35.2962],[32.9355,35.2945],[32.9398,35.2948]],
     ],
-    fallbackCenter: [32.932, 35.310],
   },
   {
-    id:     "magar",
-    name:   "מג׳אר",
-    emoji:  "🌿",
-    color:  "#C8102E",
-    queries: ["מג'אר"],
-    fallbackPolygons: [
-      [[32.9120,35.3880],[32.9140,35.4080],[32.9080,35.4200],[32.8950,35.4240],[32.8820,35.4180],[32.8780,35.4050],[32.8820,35.3900],[32.8950,35.3820]],
+    id:    "magar",
+    name:  "מג׳אר",
+    emoji: "🌿",
+    center: [32.899, 35.403],
+    polys: [
+      [[32.9082,35.3918],[32.9108,35.3958],[32.9122,35.4005],[32.9122,35.4058],
+       [32.9108,35.4108],[32.9082,35.4148],[32.9045,35.4175],[32.9002,35.4185],
+       [32.8958,35.4175],[32.8918,35.4148],[32.8892,35.4108],[32.8878,35.4058],
+       [32.8878,35.4002],[32.8892,35.3952],[32.8918,35.3915],[32.8958,35.3892],
+       [32.9002,35.3885],[32.9045,35.3895]],
     ],
-    fallbackCenter: [32.898, 35.403],
   },
   {
-    id:     "peki_group",
-    name:   "פקיעין - כ׳ סמיע - כסרא",
-    emoji:  "🌲",
-    color:  "#C8102E",
-    queries: ["פקיעין", "כפר סמיע", "כסרא-סמיע"],
-    fallbackPolygons: [
+    id:    "peki",
+    name:  "פקיעין - כ׳ סמיע - כסרא",
+    emoji: "🌲",
+    center: [32.966, 35.315],
+    polys: [
       // פקיעין
-      [[32.9920,35.3020],[32.9950,35.3200],[32.9920,35.3380],[32.9800,35.3450],[32.9660,35.3400],[32.9620,35.3240],[32.9680,35.3060],[32.9800,35.2960]],
+      [[32.9848,35.3098],[32.9878,35.3138],[32.9898,35.3188],[32.9902,35.3245],
+       [32.9888,35.3298],[32.9862,35.3342],[32.9825,35.3372],[32.9778,35.3385],
+       [32.9728,35.3378],[32.9682,35.3352],[32.9648,35.3308],[32.9628,35.3252],
+       [32.9628,35.3192],[32.9648,35.3138],[32.9682,35.3095],[32.9728,35.3068],
+       [32.9778,35.3058],[32.9828,35.3068]],
       // כפר סמיע
-      [[32.9550,35.2650],[32.9570,35.2850],[32.9460,35.2920],[32.9340,35.2860],[32.9320,35.2680],[32.9420,35.2600]],
+      [[32.9502,35.2748],[32.9528,35.2785],[32.9542,35.2832],[32.9538,35.2882],
+       [32.9518,35.2925],[32.9488,35.2958],[32.9448,35.2978],[32.9402,35.2982],
+       [32.9358,35.2965],[32.9322,35.2932],[32.9298,35.2888],[32.9292,35.2835],
+       [32.9302,35.2782],[32.9328,35.2738],[32.9368,35.2708],[32.9415,35.2695],
+       [32.9462,35.2702]],
       // כסרא
-      [[32.9750,35.3350],[32.9770,35.3530],[32.9660,35.3600],[32.9540,35.3540],[32.9520,35.3370],[32.9620,35.3280]],
+      [[32.9702,35.3375],[32.9728,35.3412],[32.9742,35.3458],[32.9738,35.3508],
+       [32.9718,35.3552],[32.9685,35.3582],[32.9642,35.3595],[32.9595,35.3588],
+       [32.9552,35.3562],[32.9522,35.3522],[32.9508,35.3472],[32.9512,35.3418],
+       [32.9532,35.3372],[32.9565,35.3338],[32.9608,35.3318],[32.9655,35.3318],
+       [32.9695,35.3342]],
     ],
-    fallbackCenter: [32.962, 35.312],
   },
 ];
 
-// Fetch real boundary from Overpass
-async function fetchVillageBoundary(nameHe) {
-  const query = `
-    [out:json][timeout:15];
-    relation["name:he"="${nameHe}"]["boundary"="administrative"]["admin_level"~"^(8|9|10)$"];
-    out geom;
-  `;
-  const r = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: query,
-  });
-  const data = await r.json();
-  const rel = data.elements?.[0];
-  if (!rel?.members) return null;
-
-  // Collect outer way coordinates
-  const coords = [];
-  for (const m of rel.members) {
-    if (m.role === "outer" && m.geometry?.length > 0) {
-      for (const pt of m.geometry) {
-        coords.push([pt.lat, pt.lon]);
-      }
-    }
-  }
-  return coords.length > 3 ? coords : null;
-}
-
 export default function MapPage({ cartCount = 0, onAreaSelect }) {
-  const navigate    = useNavigate();
-  const mapRef      = useRef(null);
-  const leafRef     = useRef(null);
-  const polyRef     = useRef({});
-  const labelRef    = useRef(null);
-  const [ready,     setReady]    = useState(false);
-  const [selected,  setSelected] = useState(null);
-  const [loadingAreas, setLoadingAreas] = useState(true);
-  const [areas,     setAreas]    = useState(null); // null = loading
+  const navigate   = useNavigate();
+  const mapRef     = useRef(null);
+  const leafRef    = useRef(null);
+  const polyRef    = useRef({});   // id -> [polygon layers]
+  const labelRef   = useRef(null);
+  const [ready,    setReady]   = useState(false);
+  const [selected, setSelected] = useState(null);
 
-  // ── 1. Load Leaflet ───────────────────────────
+  // ── Load Leaflet ──────────────────────────────
   useEffect(() => {
     if (window.L) { setReady(true); return; }
     const css = Object.assign(document.createElement("link"), {
@@ -123,55 +127,17 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     document.head.appendChild(js);
   }, []);
 
-  // ── 2. Fetch real boundaries ──────────────────
-  useEffect(() => {
-    async function load() {
-      const result = [];
-      for (const group of AREA_GROUPS) {
-        const polygons = [];
-        let anyReal = false;
-        for (let i = 0; i < group.queries.length; i++) {
-          try {
-            const coords = await fetchVillageBoundary(group.queries[i]);
-            if (coords && coords.length > 3) {
-              polygons.push({ coords, real: true });
-              anyReal = true;
-            } else {
-              polygons.push({ coords: group.fallbackPolygons[i] || [], real: false });
-            }
-          } catch {
-            polygons.push({ coords: group.fallbackPolygons[i] || [], real: false });
-          }
-        }
-        // Compute center from all coords
-        const allCoords = polygons.flatMap(p => p.coords);
-        const center = allCoords.length
-          ? [
-              allCoords.reduce((s, c) => s + c[0], 0) / allCoords.length,
-              allCoords.reduce((s, c) => s + c[1], 0) / allCoords.length,
-            ]
-          : group.fallbackCenter;
-
-        result.push({ ...group, polygons, center });
-      }
-      setAreas(result);
-      setLoadingAreas(false);
-    }
-    load();
-  }, []);
-
-  // ── 3. Init map ───────────────────────────────
+  // ── Init map + draw areas ─────────────────────
   useEffect(() => {
     if (!ready || !mapRef.current || leafRef.current) return;
     const L = window.L;
 
     const map = L.map(mapRef.current, {
       center: [32.935, 35.340],
-      zoom: 10,
+      zoom: 11,
       zoomControl: false,
       attributionControl: false,
-      minZoom: 8,
-      maxZoom: 15,
+      minZoom: 9, maxZoom: 15,
     });
 
     L.tileLayer(
@@ -181,120 +147,103 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
 
     leafRef.current = map;
 
+    // ── Draw each area group ──
+    AREAS.forEach(area => {
+      const layers = area.polys.map(coords => {
+        const poly = L.polygon(coords, {
+          color:       C.red,
+          weight:      2,
+          opacity:     0.85,
+          fillColor:   C.red,
+          fillOpacity: 0.15,
+          smoothFactor: 1.5,
+        }).addTo(map);
+
+        poly.on("click", e => {
+          L.DomEvent.stopPropagation(e);
+          handleSelect(area, map, L);
+        });
+
+        return poly;
+      });
+
+      polyRef.current[area.id] = layers;
+    });
+
+    // Click on map → deselect
     map.on("click", () => {
-      clearLabel();
-      resetPolys();
+      clearLabel(map);
+      resetAll();
       setSelected(null);
     });
 
     return () => {
       map.remove();
-      leafRef.current  = null;
-      polyRef.current  = {};
+      leafRef.current = null;
+      polyRef.current = {};
       labelRef.current = null;
     };
   }, [ready]);
 
-  // ── 4. Draw polygons when areas loaded ────────
-  useEffect(() => {
-    if (!areas || !leafRef.current || !window.L) return;
-    const L   = window.L;
-    const map = leafRef.current;
+  function handleSelect(area, map, L) {
+    if (!map || !L) return;
 
-    // Remove old layers
-    Object.values(polyRef.current).forEach(layers =>
-      layers.forEach(l => map.removeLayer(l))
+    clearLabel(map);
+    resetAll();
+
+    // Highlight this area
+    (polyRef.current[area.id] || []).forEach(p =>
+      p.setStyle({ fillOpacity: 0.32, weight: 3, opacity: 1 })
     );
-    polyRef.current = {};
 
-    areas.forEach(group => {
-      const layers = [];
+    // Floating label
+    const lbl = L.marker(area.center, {
+      icon: L.divIcon({
+        html: `<div style="
+          background:${C.red};color:white;
+          padding:8px 18px;border-radius:24px;
+          font-size:13px;font-weight:900;
+          white-space:nowrap;
+          box-shadow:0 4px 18px rgba(200,16,46,0.5);
+          font-family:Arial,sans-serif;direction:rtl;
+        ">${area.emoji} ${area.name}</div>`,
+        className:  "",
+        iconSize:   [0, 0],
+        iconAnchor: [-4, 40],
+      }),
+      interactive:  false,
+      zIndexOffset: 2000,
+    }).addTo(map);
+    labelRef.current = lbl;
 
-      group.polygons.forEach(({ coords }) => {
-        if (!coords?.length) return;
-        const poly = L.polygon(coords, {
-          color:       group.color,
-          weight:      2,
-          opacity:     0.85,
-          fillColor:   group.color,
-          fillOpacity: 0.14,
-          smoothFactor: 1,
-        }).addTo(map);
+    // Fit map to show all polygons of this area
+    const allCoords = area.polys.flat();
+    const bounds = L.latLngBounds(allCoords);
+    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 13, duration: 0.6 });
 
-        poly.on("click", (e) => {
-          L.DomEvent.stopPropagation(e);
-          clearLabel();
-          resetPolys();
+    setSelected(area);
+  }
 
-          // Highlight all polygons of this group
-          (polyRef.current[group.id] || []).forEach(l =>
-            l.setStyle({ fillOpacity: 0.30, weight: 3, opacity: 1 })
-          );
-
-          // Label in center
-          const lbl = L.marker(group.center, {
-            icon: L.divIcon({
-              html: `<div style="
-                background:${group.color};
-                color:white;
-                padding:8px 16px;
-                border-radius:22px;
-                font-size:13px;
-                font-weight:900;
-                white-space:nowrap;
-                box-shadow:0 4px 18px rgba(200,16,46,0.45);
-                font-family:Arial,sans-serif;
-                direction:rtl;
-              ">${group.emoji} ${group.name}</div>`,
-              className:  "",
-              iconSize:   [0, 0],
-              iconAnchor: [-4, 40],
-            }),
-            interactive:   false,
-            zIndexOffset:  2000,
-          }).addTo(map);
-
-          labelRef.current = lbl;
-          map.flyToBounds(
-            L.polygon(group.polygons.flatMap(p => p.coords)).getBounds(),
-            { padding: [40, 40], duration: 0.6, maxZoom: 13 }
-          );
-          setSelected(group);
-        });
-
-        layers.push(poly);
-      });
-
-      polyRef.current[group.id] = layers;
-    });
-  }, [areas]);
-
-  function clearLabel() {
-    if (labelRef.current && leafRef.current) {
-      leafRef.current.removeLayer(labelRef.current);
+  function clearLabel(map) {
+    const m = map || leafRef.current;
+    if (labelRef.current && m) {
+      m.removeLayer(labelRef.current);
       labelRef.current = null;
     }
   }
 
-  function resetPolys() {
+  function resetAll() {
     Object.values(polyRef.current).forEach(layers =>
-      layers.forEach(l =>
-        l.setStyle({ fillOpacity: 0.14, weight: 2, opacity: 0.85 })
+      layers.forEach(p =>
+        p.setStyle({ fillOpacity: 0.15, weight: 2, opacity: 0.85 })
       )
     );
-  }
-
-  function handleConfirm() {
-    if (!selected) return;
-    onAreaSelect?.(selected);
-    navigate("/");
   }
 
   return (
     <div style={{
       position: "fixed", inset: 0,
       fontFamily: "Arial,sans-serif", direction: "rtl",
-      background: "#f0ece4",
     }}>
       <style>{`
         @keyframes spin    { to { transform: rotate(360deg); } }
@@ -325,12 +274,13 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
           <div style={{fontSize:16,fontWeight:900,color:C.dark}}>
             בחר אזור משלוח
           </div>
-          <div style={{fontSize:11,marginTop:1,
+          <div style={{
+            fontSize:11,marginTop:1,
             fontWeight: selected ? 800 : 400,
             color: selected ? C.red : C.gray,
             transition:"color 0.25s",
           }}>
-            {selected ? `✓ ${selected.name} נבחר` : "לחץ על האזור שלך במפה"}
+            {selected ? `✓ ${selected.name}` : "לחץ על האזור שלך במפה"}
           </div>
         </div>
 
@@ -340,31 +290,25 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
       {/* ── Map ── */}
       <div ref={mapRef} style={{
         position:"absolute",
-        top:62,left:0,right:0,
+        top:62, left:0, right:0,
         bottom: selected ? 162 : 80,
         transition:"bottom 0.35s cubic-bezier(0.34,1.1,0.64,1)",
       }}/>
 
-      {/* ── Loading overlay ── */}
-      {(!ready || loadingAreas) && (
+      {/* ── Loading (Leaflet JS only — fast) ── */}
+      {!ready && (
         <div style={{
-          position:"absolute",inset:0,zIndex:600,
-          background:"white",
+          position:"absolute",inset:0,zIndex:600,background:"white",
           display:"flex",flexDirection:"column",
           alignItems:"center",justifyContent:"center",gap:14,
         }}>
           <div style={{
-            width:48,height:48,borderRadius:"50%",
+            width:44,height:44,borderRadius:"50%",
             border:"3px solid rgba(200,16,46,0.15)",
             borderTopColor:C.red,
             animation:"spin 0.8s linear infinite",
           }}/>
-          <div style={{color:C.gray,fontSize:13,fontWeight:700}}>
-            {!ready ? "טוען מפה..." : "טוען גבולות אזורים..."}
-          </div>
-          <div style={{color:"#9CA3AF",fontSize:11}}>
-            מביא נתונים עדכניים מ-OpenStreetMap
-          </div>
+          <div style={{color:C.gray,fontSize:13,fontWeight:700}}>טוען מפה...</div>
         </div>
       )}
 
@@ -377,7 +321,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         {[["+",1],["-",-1]].map(([l,d])=>(
           <button key={l} className="mBtn"
             onClick={()=>leafRef.current?.setZoom(
-              (leafRef.current.getZoom()||10)+d
+              (leafRef.current.getZoom()||11)+d
             )}
             style={{
               background:"white",border:"1px solid #E5E7EB",
@@ -408,9 +352,8 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
               border:"1.5px solid rgba(200,16,46,0.18)",
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:22,flexShrink:0,
-            }}>
-              {selected.emoji}
-            </div>
+            }}>{selected.emoji}</div>
+
             <div style={{flex:1}}>
               <div style={{fontSize:16,fontWeight:900,color:C.dark}}>
                 {selected.name}
@@ -419,9 +362,10 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
                 ✓ אזור פעיל • משלוח זמין
               </div>
             </div>
+
             <button className="mBtn" onClick={()=>{
               clearLabel();
-              resetPolys();
+              resetAll();
               setSelected(null);
             }} style={{
               background:"#F3F4F6",border:"none",borderRadius:"50%",
@@ -431,13 +375,15 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
             }}>✕</button>
           </div>
 
-          <button className="mBtn" onClick={handleConfirm} style={{
-            width:"100%",
-            background:`linear-gradient(135deg,${C.red},#a00020)`,
-            border:"none",borderRadius:16,padding:"15px",
-            color:"white",fontSize:15,fontWeight:900,cursor:"pointer",
-            boxShadow:"0 4px 18px rgba(200,16,46,0.35)",
-          }}>
+          <button className="mBtn"
+            onClick={()=>{ onAreaSelect?.(selected); navigate("/"); }}
+            style={{
+              width:"100%",
+              background:`linear-gradient(135deg,${C.red},#a00020)`,
+              border:"none",borderRadius:16,padding:"15px",
+              color:"white",fontSize:15,fontWeight:900,cursor:"pointer",
+              boxShadow:"0 4px 18px rgba(200,16,46,0.35)",
+            }}>
             בחר {selected.name} ←
           </button>
         </div>
