@@ -22,7 +22,7 @@ function YougoLogo({ size = 36, white = false }) {
   );
 }
 
-// ── Store Card — same style as restaurant card in HomePage ──
+// ── Store Card — EXACT same design as RestCardH in HomePage ──
 function StoreCard({ s, onClick, delay }) {
   const [pressed, setPressed] = useState(false);
   return (
@@ -30,66 +30,55 @@ function StoreCard({ s, onClick, delay }) {
       onClick={() => s.active !== false && onClick()}
       onTouchStart={() => setPressed(true)}
       onTouchEnd={() => setPressed(false)}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
       style={{
-        background: "white", borderRadius: 22, overflow: "hidden",
+        flexShrink:0, width:200, background:"white", borderRadius:22, overflow:"hidden",
         cursor: s.active !== false ? "pointer" : "default",
         opacity: s.active !== false ? 1 : 0.6,
-        boxShadow: pressed ? "0 2px 8px rgba(0,0,0,0.08)" : "0 4px 20px rgba(0,0,0,0.07)",
-        transform: pressed ? "scale(0.98)" : "scale(1)",
-        transition: "transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease",
-        animation: `slideUp 0.4s cubic-bezier(0.34,1.2,0.64,1) ${delay}ms both`,
+        boxShadow: pressed ? "0 2px 8px rgba(0,0,0,0.1)" : "0 4px 16px rgba(0,0,0,0.08)",
+        transform: pressed ? "scale(0.96)" : "scale(1)",
+        transition:"transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease",
+        animation:`slideUp 0.4s cubic-bezier(0.34,1.2,0.64,1) ${delay}ms both`,
       }}
     >
-      {/* Cover image */}
       <div style={{
-        height: 130,
+        height:110,
         background: s.image_url ? "transparent"
-          : `linear-gradient(135deg,${hexA(s.color || "#C8102E","22")},${hexA(s.color || "#C8102E","44")})`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        position: "relative", overflow: "hidden",
+          : `linear-gradient(135deg,${hexA(s.color||s.cover_color||"#C8102E","33")},${hexA(s.color||s.cover_color||"#C8102E","55")})`,
+        display:"flex", alignItems:"center", justifyContent:"center", position:"relative", overflow:"hidden",
       }}>
         {s.image_url
           ? <img src={s.image_url} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt={s.name}/>
-          : <span style={{ fontSize: 66 }}>{s.emoji || s.logo_emoji || "🏪"}</span>
+          : <span style={{ fontSize:52 }}>{s.emoji || s.logo_emoji || "🏪"}</span>
         }
         {s.active === false && (
           <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <span style={{ color:"white", fontSize:12, fontWeight:700, background:"rgba(0,0,0,0.5)", padding:"4px 14px", borderRadius:20 }}>סגור כעת</span>
+            <span style={{ color:"white", fontSize:11, fontWeight:700, background:"rgba(0,0,0,0.5)", padding:"3px 12px", borderRadius:20 }}>סגור כעת</span>
           </div>
         )}
-        {s.free_delivery && (
-          <span style={{ position:"absolute", top:10, right:10, background:"#10B981", color:"white", fontSize:9, fontWeight:800, padding:"3px 10px", borderRadius:20 }}>🚀 משלוח חינם</span>
-        )}
+        {s.free_delivery && <span style={{ position:"absolute", top:8, right:8, background:C.green, color:"white", fontSize:9, fontWeight:800, padding:"2px 8px", borderRadius:20 }}>🚀 חינם</span>}
+        <div style={{ position:"absolute", bottom:8, left:8, display:"flex", alignItems:"center", gap:3, background:"rgba(0,0,0,0.45)", borderRadius:20, padding:"3px 8px" }}>
+          <span style={{ fontSize:10 }}>⭐</span>
+          <span style={{ fontSize:11, fontWeight:800, color:"white" }}>{s.rating || "4.5"}</span>
+        </div>
       </div>
-
-      {/* Info */}
-      <div style={{ padding: "12px 14px 14px" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-          <div style={{ flex:1 }}>
-            <div style={{ fontWeight:900, fontSize:15, color:C.dark }}>{s.name}</div>
-            <div style={{ fontSize:11, color:C.gray, marginTop:2, display:"flex", alignItems:"center", gap:3 }}>
-              <IcoPin s={10}/>{s.location || s.address || ""}
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:3, background:"#FFF9EB", borderRadius:20, padding:"3px 9px", flexShrink:0 }}>
-            <span style={{ fontSize:11 }}>⭐</span>
-            <span style={{ fontSize:12, fontWeight:700, color:"#B45309" }}>{s.rating || "4.5"}</span>
-          </div>
+      <div style={{ padding:"10px 12px 12px" }}>
+        <div style={{ fontWeight:900, fontSize:14, color:C.dark, marginBottom:3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{s.name}</div>
+        <div style={{ fontSize:10, color:C.gray, marginBottom:8, display:"flex", alignItems:"center", gap:2 }}>
+          <IcoPin s={9}/>{s.location || s.address || ""}
         </div>
-        <div style={{ display:"flex", gap:8, marginTop:10, flexWrap:"wrap" }}>
-          {[
-            { I:IcoClock, t:(s.delivery_time||"20-30")+" דק'" },
-            { I:IcoTruck, t:s.delivery_fee===0?"משלוח חינם":"₪"+(s.delivery_fee||12)+" משלוח" },
-            { I:IcoOrders, t:"מינ' ₪"+(s.min_order||40) },
-          ].map((x,i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:4, background:C.bg, borderRadius:20, padding:"4px 10px" }}>
-              <x.I s={11}/><span style={{ fontSize:11, fontWeight:600, color:C.dark }}>{x.t}</span>
-            </div>
-          ))}
+        <div style={{ display:"flex", gap:5 }}>
+          <span style={{ fontSize:9, fontWeight:600, color:C.gray, background:C.bg, borderRadius:10, padding:"2px 7px", display:"flex", alignItems:"center", gap:2 }}>
+            <IcoClock s={9}/>{s.delivery_time || "25"} דק'
+          </span>
+          <span style={{ fontSize:9, fontWeight:600, color: s.delivery_fee===0 ? C.green : C.gray, background:C.bg, borderRadius:10, padding:"2px 7px" }}>
+            {s.delivery_fee === 0 ? "חינם" : "₪" + (s.delivery_fee || 12)}
+          </span>
         </div>
-        <div style={{ marginTop:8, display:"flex", alignItems:"center", gap:4 }}>
-          <span style={{ width:7, height:7, borderRadius:"50%", background:s.active!==false?C.green:"#EF4444", display:"inline-block" }}/>
-          <span style={{ fontSize:12, color:s.active!==false?C.green:"#EF4444", fontWeight:700 }}>{s.active!==false?"פתוח":"סגור"}</span>
+        <div style={{ marginTop:6, display:"flex", alignItems:"center", gap:4 }}>
+          <span style={{ width:6, height:6, borderRadius:"50%", background: s.active !== false ? C.green : "#EF4444", display:"inline-block" }}/>
+          <span style={{ fontSize:10, color: s.active !== false ? C.green : "#EF4444", fontWeight:700 }}>{s.active !== false ? "פתוח" : "סגור"}</span>
         </div>
       </div>
     </div>
