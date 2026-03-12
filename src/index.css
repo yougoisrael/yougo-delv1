@@ -17,9 +17,35 @@ html, body, #root {
 body {
   font-family: Arial, sans-serif;
   background: #F7F7F8;
-  /* smooth font rendering */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Fixed header that respects max-width ── */
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  z-index: 100;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+}
+
+/* ── Fixed bottom nav ── */
+.fixed-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  z-index: 150;
+  background: white;
+  border-top: 1px solid #F0F0F0;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
 }
 
 /* ── Smooth scroll everywhere ── */
