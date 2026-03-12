@@ -315,15 +315,28 @@ function Sidebar({ open, onClose, user, navigate }) {
 function HorizRow({ title, items, renderCard, onSeeAll }) {
   return (
     <div style={{ marginBottom:24 }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"0 16px", marginBottom:10 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-          <IcoFire s={15} />
-          <span style={{ fontSize:16, fontWeight:900, color:C.dark }}>{title}</span>
+      {title && (
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"0 16px", marginBottom:10 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <IcoFire s={15} />
+            <span style={{ fontSize:16, fontWeight:900, color:C.dark }}>{title}</span>
+          </div>
+          {onSeeAll && <span onClick={onSeeAll} style={{ fontSize:12, color:C.red, fontWeight:700, cursor:"pointer" }}>הכל ←</span>}
         </div>
-        {onSeeAll && <span onClick={onSeeAll} style={{ fontSize:12, color:C.red, fontWeight:700, cursor:"pointer" }}>הכל ←</span>}
-      </div>
-      <div style={{ display:"flex", gap:12, overflowX:"auto", padding:"4px 16px 8px", scrollbarWidth:"none", WebkitOverflowScrolling:"touch" }}>
-        {items.map((item, i) => renderCard(item, i))}
+      )}
+      <div style={{
+        display:"flex", gap:12,
+        overflowX:"auto", overflowY:"visible",
+        padding:"4px 16px 8px",
+        scrollbarWidth:"none",
+        WebkitOverflowScrolling:"touch",
+        scrollSnapType:"x mandatory",
+      }}>
+        {items.map((item, i) => (
+          <div key={i} style={{ scrollSnapAlign:"start", flexShrink:0 }}>
+            {renderCard(item, i)}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -485,6 +498,7 @@ export default function HomePage({ user, guest, cartCount }) {
 
       {/* FIXED HEADER — TopBar + TABS */}
       <div className="fixed-header">
+       <div className="page-wrap">
         {/* TOP BAR */}
         <div style={{ padding:"10px 16px", display:"flex", alignItems:"center", gap:10 }}>
           {searchOpen ? (
@@ -530,6 +544,7 @@ export default function HomePage({ user, guest, cartCount }) {
             );
           })}
         </div>
+       </div>
       </div>
 
       {/* BANNER */}
@@ -590,31 +605,34 @@ export default function HomePage({ user, guest, cartCount }) {
           טוען מסעדות...
         </div>
       ) : searchQ ? (
-        <div style={{ padding:"8px 16px" }}>
-          <div style={{ fontSize:13, color:C.gray, marginBottom:12 }}>תוצאות: {searchQ} ({filtered.length})</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-            {filtered.length===0
-              ? <div style={{ gridColumn:"1/-1", textAlign:"center", padding:"50px 0", color:C.gray }}><div style={{ fontSize:40 }}>🔍</div><div style={{ fontSize:14, fontWeight:600, marginTop:10 }}>לא נמצאו תוצאות</div></div>
-              : filtered.map((r,i) => <RestCardV key={r.id} r={r} onClick={() => navigate("/restaurant/"+r.id, { state:r })} delay={i*60} />)
-            }
-          </div>
+        /* ── Search results: horizontal carousel ── */
+        <div>
+          <div style={{ fontSize:13, color:C.gray, padding:"0 16px 8px" }}>תוצאות: {searchQ} ({filtered.length})</div>
+          {filtered.length === 0
+            ? <div style={{ textAlign:"center", padding:"50px 0", color:C.gray }}><div style={{ fontSize:40 }}>🔍</div><div style={{ fontSize:14, fontWeight:600, marginTop:10 }}>לא נמצאו תוצאות</div></div>
+            : <HorizRow title={`תוצאות (${filtered.length})`} items={filtered}
+                renderCard={(r,i) => <RestCardH key={r.id} r={r} delay={i*50} onClick={() => navigate("/restaurant/"+r.id, { state:r })} />}
+              />
+          }
         </div>
       ) : cat !== "all" ? (
-        <div style={{ padding:"8px 16px" }}>
-          <div style={{ fontSize:16, fontWeight:900, color:C.dark, marginBottom:14, display:"flex", alignItems:"center", gap:6 }}>
+        /* ── Category filter: carousel ── */
+        <div>
+          <div style={{ fontSize:16, fontWeight:900, color:C.dark, padding:"4px 16px 8px", display:"flex", alignItems:"center", gap:6 }}>
             <IcoFire s={15} />{CATS.find(c=>c.id===cat)?.label} ({filtered.length})
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-            {filtered.length===0
-              ? <div style={{ gridColumn:"1/-1", textAlign:"center", padding:"50px 0", color:C.gray }}><div style={{ fontSize:40 }}>🍽️</div><div style={{ fontSize:14, fontWeight:600, marginTop:10 }}>אין מסעדות בקטגוריה זו</div></div>
-              : filtered.map((r,i) => <RestCardV key={r.id} r={r} onClick={() => navigate("/restaurant/"+r.id, { state:r })} delay={i*60} />)
-            }
-          </div>
+          {filtered.length === 0
+            ? <div style={{ textAlign:"center", padding:"50px 0", color:C.gray }}><div style={{ fontSize:40 }}>🍽️</div><div style={{ fontSize:14, fontWeight:600, marginTop:10 }}>אין מסעדות בקטגוריה זו</div></div>
+            : <HorizRow title="" items={filtered}
+                renderCard={(r,i) => <RestCardH key={r.id} r={r} delay={i*50} onClick={() => navigate("/restaurant/"+r.id, { state:r })} />}
+              />
+          }
         </div>
       ) : (
+        /* ── Main view: carousels per category like Haat ── */
         <>
-          {restaurants.length>0 && (
-            <HorizRow title="🔥 הכי פופולרי" items={restaurants.slice(0,8)} seeAll
+          {restaurants.length > 0 && (
+            <HorizRow title="🔥 הכי פופולרי" items={restaurants.slice(0,8)}
               renderCard={(r,i) => <RestCardH key={r.id} r={r} delay={i*50} onClick={() => navigate("/restaurant/"+r.id, { state:r })} />}
             />
           )}
@@ -623,7 +641,7 @@ export default function HomePage({ user, guest, cartCount }) {
               renderCard={(r,i) => <RestCardH key={r.id} r={r} delay={i*50} onClick={() => navigate("/restaurant/"+r.id, { state:r })} />}
             />
           ))}
-          {restaurants.length===0 && (
+          {restaurants.length === 0 && (
             <div style={{ textAlign:"center", padding:"60px 20px", color:C.gray }}>
               <div style={{ fontSize:50, marginBottom:12 }}>🍽️</div>
               <div style={{ fontSize:15, fontWeight:600, color:C.dark }}>אין מסעדות עדיין</div>
