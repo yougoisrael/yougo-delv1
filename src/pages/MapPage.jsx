@@ -4,113 +4,21 @@ import BottomNav from "../components/BottomNav";
 
 const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280" };
 
-// ─── إحداثيات حقيقية مباشرة — بدون أي fetch ────────────────────────────────
-// كل polygon مرسوم بدقة حول حدود القرى الفعلية
 const AREAS = [
-  {
-    id:    "rame",
-    name:  "ראמה - סגור - בית ג׳ן",
-    emoji: "🏡",
-    center: [32.946, 35.378],
-    // ראמה
-    polys: [
-      [[32.9482,35.3612],[32.9512,35.3652],[32.9538,35.3700],[32.9551,35.3758],
-       [32.9544,35.3812],[32.9522,35.3858],[32.9489,35.3892],[32.9448,35.3908],
-       [32.9405,35.3901],[32.9368,35.3876],[32.9342,35.3838],[32.9332,35.3792],
-       [32.9338,35.3744],[32.9355,35.3702],[32.9384,35.3668],[32.9422,35.3640],
-       [32.9458,35.3618]],
-      // סגור
-      [[32.9228,35.3312],[32.9248,35.3352],[32.9262,35.3400],[32.9258,35.3448],
-       [32.9238,35.3488],[32.9208,35.3510],[32.9172,35.3514],[32.9138,35.3498],
-       [32.9112,35.3464],[32.9105,35.3422],[32.9115,35.3380],[32.9138,35.3345],
-       [32.9172,35.3320],[32.9208,35.3308]],
-      // בית ג'ן
-      [[32.9718,35.3918],[32.9748,35.3962],[32.9768,35.4018],[32.9772,35.4078],
-       [32.9758,35.4135],[32.9728,35.4182],[32.9685,35.4212],[32.9635,35.4222],
-       [32.9588,35.4208],[32.9552,35.4178],[32.9532,35.4135],[32.9528,35.4082],
-       [32.9542,35.4028],[32.9568,35.3982],[32.9608,35.3948],[32.9658,35.3928],
-       [32.9698,35.3918]],
-    ],
-  },
-  {
-    id:    "karmiel",
-    name:  "כרמיאל - נחף - מג׳ד - שזור",
-    emoji: "🏙️",
-    center: [32.928, 35.318],
-    polys: [
-      // כרמיאל
-      [[32.9198,35.2722],[32.9228,35.2768],[32.9248,35.2828],[32.9252,35.2898],
-       [32.9242,35.2968],[32.9218,35.3028],[32.9182,35.3072],[32.9135,35.3098],
-       [32.9082,35.3102],[32.9032,35.3082],[32.8992,35.3042],[32.8968,35.2988],
-       [32.8962,35.2925],[32.8972,35.2862],[32.8998,35.2808],[32.9038,35.2762],
-       [32.9088,35.2732],[32.9142,35.2718]],
-      // נחף
-      [[32.9618,35.3108],[32.9648,35.3148],[32.9668,35.3198],[32.9672,35.3252],
-       [32.9658,35.3305],[32.9632,35.3348],[32.9595,35.3378],[32.9548,35.3392],
-       [32.9498,35.3385],[32.9455,35.3358],[32.9425,35.3315],[32.9412,35.3262],
-       [32.9418,35.3208],[32.9442,35.3162],[32.9478,35.3125],[32.9525,35.3108],
-       [32.9575,35.3102]],
-      // מג'ד אלכרום
-      [[32.9082,35.3418],[32.9108,35.3458],[32.9122,35.3508],[32.9118,35.3562],
-       [32.9098,35.3608],[32.9065,35.3642],[32.9022,35.3658],[32.8975,35.3652],
-       [32.8935,35.3625],[32.8908,35.3582],[32.8898,35.3528],[32.8908,35.3475],
-       [32.8932,35.3432],[32.8968,35.3408],[32.9012,35.3398],[32.9055,35.3405]],
-      // שזור
-      [[32.9402,35.2958],[32.9428,35.2998],[32.9442,35.3045],[32.9438,35.3095],
-       [32.9418,35.3138],[32.9385,35.3168],[32.9342,35.3178],[32.9298,35.3165],
-       [32.9265,35.3132],[32.9252,35.3088],[32.9258,35.3038],[32.9278,35.2995],
-       [32.9312,35.2962],[32.9355,35.2945],[32.9398,35.2948]],
-    ],
-  },
-  {
-    id:    "magar",
-    name:  "מג׳אר",
-    emoji: "🌿",
-    center: [32.899, 35.403],
-    polys: [
-      [[32.9082,35.3918],[32.9108,35.3958],[32.9122,35.4005],[32.9122,35.4058],
-       [32.9108,35.4108],[32.9082,35.4148],[32.9045,35.4175],[32.9002,35.4185],
-       [32.8958,35.4175],[32.8918,35.4148],[32.8892,35.4108],[32.8878,35.4058],
-       [32.8878,35.4002],[32.8892,35.3952],[32.8918,35.3915],[32.8958,35.3892],
-       [32.9002,35.3885],[32.9045,35.3895]],
-    ],
-  },
-  {
-    id:    "peki",
-    name:  "פקיעין - כ׳ סמיע - כסרא",
-    emoji: "🌲",
-    center: [32.966, 35.315],
-    polys: [
-      // פקיעין
-      [[32.9848,35.3098],[32.9878,35.3138],[32.9898,35.3188],[32.9902,35.3245],
-       [32.9888,35.3298],[32.9862,35.3342],[32.9825,35.3372],[32.9778,35.3385],
-       [32.9728,35.3378],[32.9682,35.3352],[32.9648,35.3308],[32.9628,35.3252],
-       [32.9628,35.3192],[32.9648,35.3138],[32.9682,35.3095],[32.9728,35.3068],
-       [32.9778,35.3058],[32.9828,35.3068]],
-      // כפר סמיע
-      [[32.9502,35.2748],[32.9528,35.2785],[32.9542,35.2832],[32.9538,35.2882],
-       [32.9518,35.2925],[32.9488,35.2958],[32.9448,35.2978],[32.9402,35.2982],
-       [32.9358,35.2965],[32.9322,35.2932],[32.9298,35.2888],[32.9292,35.2835],
-       [32.9302,35.2782],[32.9328,35.2738],[32.9368,35.2708],[32.9415,35.2695],
-       [32.9462,35.2702]],
-      // כסרא
-      [[32.9702,35.3375],[32.9728,35.3412],[32.9742,35.3458],[32.9738,35.3508],
-       [32.9718,35.3552],[32.9685,35.3582],[32.9642,35.3595],[32.9595,35.3588],
-       [32.9552,35.3562],[32.9522,35.3522],[32.9508,35.3472],[32.9512,35.3418],
-       [32.9532,35.3372],[32.9565,35.3338],[32.9608,35.3318],[32.9655,35.3318],
-       [32.9695,35.3342]],
-    ],
-  },
+  { id: "rame",    name: "ראמה - סגור - בית ג׳ן",          lat: 32.946, lng: 35.378 },
+  { id: "karmiel", name: "כרמיאל - נחף - מג׳ד - שזור",     lat: 32.928, lng: 35.310 },
+  { id: "magar",   name: "מג׳אר",                           lat: 32.899, lng: 35.403 },
+  { id: "peki",    name: "פקיעין - כ׳ סמיע - כסרא",         lat: 32.969, lng: 35.322 },
 ];
 
 export default function MapPage({ cartCount = 0, onAreaSelect }) {
-  const navigate   = useNavigate();
-  const mapRef     = useRef(null);
-  const leafRef    = useRef(null);
-  const polyRef    = useRef({});   // id -> [polygon layers]
-  const labelRef   = useRef(null);
-  const [ready,    setReady]   = useState(false);
-  const [selected, setSelected] = useState(null);
+  const navigate    = useNavigate();
+  const mapRef      = useRef(null);
+  const leafRef     = useRef(null);
+  const markersRef  = useRef({});
+  const circleRef   = useRef(null);
+  const [ready,     setReady]    = useState(false);
+  const [selected,  setSelected] = useState(null);
 
   // ── Load Leaflet ──────────────────────────────
   useEffect(() => {
@@ -127,13 +35,13 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     document.head.appendChild(js);
   }, []);
 
-  // ── Init map + draw areas ─────────────────────
+  // ── Init map ──────────────────────────────────
   useEffect(() => {
     if (!ready || !mapRef.current || leafRef.current) return;
     const L = window.L;
 
     const map = L.map(mapRef.current, {
-      center: [32.935, 35.340],
+      center: [32.935, 35.350],
       zoom: 11,
       zoomControl: false,
       attributionControl: false,
@@ -147,109 +55,118 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
 
     leafRef.current = map;
 
-    // ── Draw each area group ──
+    // Draw pin for each area
     AREAS.forEach(area => {
-      const layers = area.polys.map(coords => {
-        const poly = L.polygon(coords, {
-          color:       C.red,
-          weight:      2,
-          opacity:     0.85,
-          fillColor:   C.red,
-          fillOpacity: 0.15,
-          smoothFactor: 1.5,
-        }).addTo(map);
-
-        poly.on("click", e => {
-          L.DomEvent.stopPropagation(e);
-          handleSelect(area, map, L);
-        });
-
-        return poly;
+      const icon = L.divIcon({
+        html: `
+          <div class="yg-pin" id="pin-${area.id}">
+            <div class="yg-pin-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="${C.red}">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </div>
+            <div class="yg-pin-tail"></div>
+          </div>
+        `,
+        className:  "",
+        iconSize:   [44, 54],
+        iconAnchor: [22, 54],
       });
 
-      polyRef.current[area.id] = layers;
+      const marker = L.marker([area.lat, area.lng], { icon })
+        .addTo(map)
+        .on("click", e => {
+          L.DomEvent.stopPropagation(e);
+          selectArea(area, map, L);
+        });
+
+      markersRef.current[area.id] = marker;
     });
 
-    // Click on map → deselect
-    map.on("click", () => {
-      clearLabel(map);
-      resetAll();
-      setSelected(null);
-    });
+    // Click map → deselect
+    map.on("click", () => deselect(map));
 
     return () => {
       map.remove();
-      leafRef.current = null;
-      polyRef.current = {};
-      labelRef.current = null;
+      leafRef.current  = null;
+      markersRef.current = {};
+      circleRef.current  = null;
     };
   }, [ready]);
 
-  function handleSelect(area, map, L) {
-    if (!map || !L) return;
+  function selectArea(area, map, L) {
+    // Remove old circle
+    if (circleRef.current) { map.removeLayer(circleRef.current); circleRef.current = null; }
 
-    clearLabel(map);
-    resetAll();
+    // Reset all pins
+    AREAS.forEach(a => setPinActive(a.id, false));
 
-    // Highlight this area
-    (polyRef.current[area.id] || []).forEach(p =>
-      p.setStyle({ fillOpacity: 0.32, weight: 3, opacity: 1 })
-    );
+    // Activate this pin
+    setPinActive(area.id, true);
 
-    // Floating label
-    const lbl = L.marker(area.center, {
-      icon: L.divIcon({
-        html: `<div style="
-          background:${C.red};color:white;
-          padding:8px 18px;border-radius:24px;
-          font-size:13px;font-weight:900;
-          white-space:nowrap;
-          box-shadow:0 4px 18px rgba(200,16,46,0.5);
-          font-family:Arial,sans-serif;direction:rtl;
-        ">${area.emoji} ${area.name}</div>`,
-        className:  "",
-        iconSize:   [0, 0],
-        iconAnchor: [-4, 40],
-      }),
-      interactive:  false,
-      zIndexOffset: 2000,
+    // Draw circle around area
+    const circle = L.circle([area.lat, area.lng], {
+      radius:      4500,
+      color:       C.red,
+      weight:      2,
+      opacity:     0.6,
+      fillColor:   C.red,
+      fillOpacity: 0.10,
+      dashArray:   "6,4",
     }).addTo(map);
-    labelRef.current = lbl;
+    circleRef.current = circle;
 
-    // Fit map to show all polygons of this area
-    const allCoords = area.polys.flat();
-    const bounds = L.latLngBounds(allCoords);
-    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 13, duration: 0.6 });
-
+    map.flyTo([area.lat, area.lng], 12, { duration: 0.6 });
     setSelected(area);
   }
 
-  function clearLabel(map) {
-    const m = map || leafRef.current;
-    if (labelRef.current && m) {
-      m.removeLayer(labelRef.current);
-      labelRef.current = null;
+  function deselect(map) {
+    if (circleRef.current && map) { map.removeLayer(circleRef.current); circleRef.current = null; }
+    AREAS.forEach(a => setPinActive(a.id, false));
+    setSelected(null);
+  }
+
+  function setPinActive(id, active) {
+    const el = document.getElementById(`pin-${id}`);
+    if (!el) return;
+    const circle = el.querySelector(".yg-pin-circle");
+    const tail   = el.querySelector(".yg-pin-tail");
+    if (circle) {
+      circle.style.background     = active ? C.red : "white";
+      circle.style.border         = active ? `3px solid ${C.red}` : `3px solid ${C.red}`;
+      circle.style.transform      = active ? "scale(1.2)" : "scale(1)";
+      circle.querySelector("svg path").setAttribute("fill", active ? "white" : C.red);
+    }
+    if (tail) {
+      tail.style.borderTopColor = C.red;
     }
   }
 
-  function resetAll() {
-    Object.values(polyRef.current).forEach(layers =>
-      layers.forEach(p =>
-        p.setStyle({ fillOpacity: 0.15, weight: 2, opacity: 0.85 })
-      )
-    );
-  }
-
   return (
-    <div style={{
-      position: "fixed", inset: 0,
-      fontFamily: "Arial,sans-serif", direction: "rtl",
-    }}>
+    <div style={{ position:"fixed", inset:0, fontFamily:"Arial,sans-serif", direction:"rtl" }}>
       <style>{`
-        @keyframes spin    { to { transform: rotate(360deg); } }
-        @keyframes slideUp { from { transform: translateY(110%); opacity:0; } to { transform: translateY(0); opacity:1; } }
-        .leaflet-container { background: #f0ece4 !important; }
-        .mBtn:active { transform: scale(0.91); }
+        @keyframes spin    { to { transform:rotate(360deg); } }
+        @keyframes slideUp { from { transform:translateY(110%);opacity:0; } to { transform:translateY(0);opacity:1; } }
+        @keyframes pinPop  { 0%{transform:scale(0.5);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+        .leaflet-container { background:#f0ece4!important; }
+        .mBtn:active { transform:scale(0.91); }
+
+        .yg-pin { display:flex; flex-direction:column; align-items:center; animation:pinPop 0.35s ease; }
+        .yg-pin-circle {
+          width:44px; height:44px; border-radius:50%;
+          background:white; border:3px solid ${C.red};
+          display:flex; align-items:center; justify-content:center;
+          box-shadow:0 3px 12px rgba(200,16,46,0.35);
+          transition:all 0.2s ease;
+          cursor:pointer;
+        }
+        .yg-pin-tail {
+          width:0; height:0;
+          border-left:7px solid transparent;
+          border-right:7px solid transparent;
+          border-top:10px solid ${C.red};
+          margin-top:-1px;
+        }
       `}</style>
 
       {/* ── Header ── */}
@@ -271,16 +188,14 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         </button>
 
         <div style={{flex:1,textAlign:"center"}}>
-          <div style={{fontSize:16,fontWeight:900,color:C.dark}}>
-            בחר אזור משלוח
-          </div>
+          <div style={{fontSize:16,fontWeight:900,color:C.dark}}>בחר אזור משלוח</div>
           <div style={{
             fontSize:11,marginTop:1,
-            fontWeight: selected ? 800 : 400,
-            color: selected ? C.red : C.gray,
+            fontWeight:selected?800:400,
+            color:selected?C.red:C.gray,
             transition:"color 0.25s",
           }}>
-            {selected ? `✓ ${selected.name}` : "לחץ על האזור שלך במפה"}
+            {selected ? `✓ ${selected.name}` : "לחץ על סמן האזור שלך"}
           </div>
         </div>
 
@@ -290,12 +205,12 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
       {/* ── Map ── */}
       <div ref={mapRef} style={{
         position:"absolute",
-        top:62, left:0, right:0,
-        bottom: selected ? 162 : 80,
+        top:62,left:0,right:0,
+        bottom:selected ? 162 : 80,
         transition:"bottom 0.35s cubic-bezier(0.34,1.1,0.64,1)",
       }}/>
 
-      {/* ── Loading (Leaflet JS only — fast) ── */}
+      {/* ── Loading ── */}
       {!ready && (
         <div style={{
           position:"absolute",inset:0,zIndex:600,background:"white",
@@ -320,9 +235,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
       }}>
         {[["+",1],["-",-1]].map(([l,d])=>(
           <button key={l} className="mBtn"
-            onClick={()=>leafRef.current?.setZoom(
-              (leafRef.current.getZoom()||11)+d
-            )}
+            onClick={()=>leafRef.current?.setZoom((leafRef.current.getZoom()||11)+d)}
             style={{
               background:"white",border:"1px solid #E5E7EB",
               borderRadius:10,width:36,height:36,
@@ -351,23 +264,21 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
               background:"rgba(200,16,46,0.07)",
               border:"1.5px solid rgba(200,16,46,0.18)",
               display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:22,flexShrink:0,
-            }}>{selected.emoji}</div>
+              flexShrink:0,
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill={C.red}>
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </div>
 
             <div style={{flex:1}}>
-              <div style={{fontSize:16,fontWeight:900,color:C.dark}}>
-                {selected.name}
-              </div>
+              <div style={{fontSize:16,fontWeight:900,color:C.dark}}>{selected.name}</div>
               <div style={{fontSize:12,color:"#16a34a",fontWeight:700,marginTop:2}}>
                 ✓ אזור פעיל • משלוח זמין
               </div>
             </div>
 
-            <button className="mBtn" onClick={()=>{
-              clearLabel();
-              resetAll();
-              setSelected(null);
-            }} style={{
+            <button className="mBtn" onClick={()=>deselect(leafRef.current)} style={{
               background:"#F3F4F6",border:"none",borderRadius:"50%",
               width:30,height:30,cursor:"pointer",flexShrink:0,
               display:"flex",alignItems:"center",justifyContent:"center",
