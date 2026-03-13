@@ -20,6 +20,7 @@ import MapPage           from "./pages/MapPage";
 import AddressPickerPage from "./pages/AddressPickerPage";
 import BusinessPortal from "./BusinessPortal";
 import AdminReal      from "./AdminReal";
+import AdminZonesPage from "./pages/AdminZonesPage";
 
 export default function App() {
   const { cart, setCart, addToCart, removeFromCart, cartCount, cartTotal } = useCart();
@@ -110,6 +111,7 @@ export default function App() {
       <Route path="/map"            element={<MapPage cartCount={cartCount}/>}/>
       <Route path="/address"        element={<AddressPickerPage onAddressSave={(a)=>console.log(a)}/>}/>
       <Route path="/business"       element={<BusinessPortal onBack={() => window.history.back()}/>}/>
+      <Route path="/admin/zones"    element={<AdminZonesPage/>}/>
       <Route path="/admin"          element={
         <AdminAuthGuard onBack={() => window.history.back()}>
           {({ onLogout }) => <AdminReal onBack={onLogout}/>}
