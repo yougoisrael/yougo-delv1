@@ -31,6 +31,8 @@ const AREAS = [
   },
 ];
 
+const CARD_HEIGHT = 175; // ارتفاع الكارت بالبكسل
+
 export default function MapPage({ cartCount = 0, onAreaSelect }) {
   const navigate   = useNavigate();
   const mapRef     = useRef(null);
@@ -64,11 +66,8 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
       attributionControl: false,
       minZoom: 10,
       maxZoom: 14,
-      // حدود تسمح برؤية كل المناطق + كارت تحت
-      maxBounds: [[32.75, 35.05], [33.15, 35.65]],
+      maxBounds: [[32.75, 35.05], [33.20, 35.65]],
       maxBoundsViscosity: 0.85,
-      // سرعة أكبر
-      zoomAnimation: true,
       fadeAnimation: false,
       markerZoomAnimation: false,
     });
@@ -116,9 +115,14 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
   }, [ready]);
 
   function selectArea(area, map, L) {
+    // حذف الدائرة القديمة
     if (circleRef.current) { map.removeLayer(circleRef.current); circleRef.current = null; }
+
+    // reset pins
     AREAS.forEach(a => setPinActive(a.id, false));
     setPinActive(area.id, true);
+
+    // رسم الدائرة
     circleRef.current = L.circle([area.lat, area.lng], {
       radius:      area.radius,
       color:       C.red,
@@ -128,7 +132,17 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
       fillOpacity: 0.10,
       dashArray:   "6,4",
     }).addTo(map);
-    // بدون flyTo — الخريطة ثابتة تماماً
+
+    // تحريك بسيط للأعلى عشان المنطقة تبين فوق الكارت
+    // نحسب كم pixel الكارت يأخذ ونعوّض
+    const mapHeight = map.getSize().y;
+    const offsetPx  = CARD_HEIGHT / 2; // نرفع بنص ارتفاع الكارت
+    const currentPt = map.latLngToContainerPoint([area.lat, area.lng]);
+    const newPt     = L.point(currentPt.x, currentPt.y + offsetPx);
+    const newCenter = map.containerPointToLatLng(newPt);
+
+    map.panTo(newCenter, { animate: true, duration: 0.4, easeLinearity: 0.5 });
+
     setSelected(area);
   }
 
@@ -146,7 +160,9 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     if (circle) {
       circle.style.background = active ? C.red : "white";
       circle.style.transform  = active ? "scale(1.25)" : "scale(1)";
-      circle.style.boxShadow  = active ? "0 4px 16px rgba(200,16,46,0.45)" : "0 2px 8px rgba(200,16,46,0.25)";
+      circle.style.boxShadow  = active
+        ? "0 4px 16px rgba(200,16,46,0.45)"
+        : "0 2px 8px rgba(200,16,46,0.25)";
       circle.querySelector("svg path").setAttribute("fill", active ? "white" : C.red);
     }
     if (label) {
@@ -203,7 +219,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         </button>
         <div style={{ flex:1, textAlign:"center" }}>
           <div style={{ fontSize:16, fontWeight:900, color:C.dark }}>בחר אזור משלוח</div>
-          <div style={{ fontSize:11, marginTop:1, color:selected ? C.red : C.gray, fontWeight:selected?800:400, transition:"color 0.25s" }}>
+          <div style={{ fontSize:11, marginTop:1, color:selected?C.red:C.gray, fontWeight:selected?800:400, transition:"color 0.25s" }}>
             {selected ? `✓ ${selected.short}` : "לחץ על סמן האזור שלך"}
           </div>
         </div>
@@ -212,9 +228,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
 
       {/* Map */}
       <div ref={mapRef} style={{
-        position:"absolute", top:62, left:0, right:0,
-        bottom: selected ? 168 : 80,
-        transition:"bottom 0.35s cubic-bezier(0.34,1.1,0.64,1)",
+        position:"absolute", top:62, left:0, right:0, bottom:80,
       }}/>
 
       {/* Loading */}
@@ -236,7 +250,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         ))}
       </div>
 
-      {/* Selected card */}
+      {/* Selected card — فوق BottomNav مباشرة */}
       {selected && (
         <div style={{
           position:"absolute", bottom:80, left:0, right:0, zIndex:1000,
