@@ -1,60 +1,98 @@
-// MapPage.jsx — بدون Leaflet، يعمل 100% على Vercel
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
 import BottomNav from "../components/BottomNav";
 
 const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280" };
 
-// خريطة ثابتة للمنطقة بدون أي مكتبة خارجية
-const MAP_CENTER = { lat: 32.935, lng: 35.350 };
-const ZOOM = 11;
+// إحداثيات حقيقية لكل منطقة
+const ZONES = [
+  { id: 1,  name: "ראמה",         lat: 32.9367, lng: 35.3647 },
+  { id: 2,  name: "סאגור",        lat: 32.9261, lng: 35.3431 },
+  { id: 3,  name: "מגאר",         lat: 32.9272, lng: 35.4025 },
+  { id: 4,  name: "עין אל-אסד",   lat: 32.9503, lng: 35.3311 },
+  { id: 5,  name: "פקיעין",       lat: 32.9797, lng: 35.3208 },
+  { id: 6,  name: "כסרא-סמיע",    lat: 33.0114, lng: 35.3508 },
+  { id: 7,  name: "חורפיש",       lat: 33.0000, lng: 35.3167 },
+  { id: 8,  name: "יאנוח-ג'ת",    lat: 32.9633, lng: 35.2975 },
+  { id: 9,  name: "כרמיאל",       lat: 32.9147, lng: 35.2969 },
+  { id: 10, name: "נחף",          lat: 32.9408, lng: 35.3194 },
+  { id: 11, name: "מגד אל-כרום",  lat: 32.9314, lng: 35.2592 },
+  { id: 12, name: "בעינה",        lat: 32.8956, lng: 35.3089 },
+  { id: 13, name: "דיר אל-אסד",   lat: 32.9036, lng: 35.3142 },
+  { id: 14, name: "עראבה",        lat: 32.8547, lng: 35.3378 },
+  { id: 15, name: "סחנין",        lat: 32.8614, lng: 35.2978 },
+];
 
-// تحويل lat/lng لموضع على الصورة (Mercator بسيط)
-function latLngToPercent(lat, lng, bounds) {
-  const x = ((lng - bounds.west) / (bounds.east - bounds.west)) * 100;
-  const y = ((bounds.north - lat) / (bounds.north - bounds.south)) * 100;
+// حدود المنطقة الكاملة
+const BOUNDS = {
+  north: 33.065,
+  south: 32.820,
+  east:  35.445,
+  west:  35.230,
+};
+
+const SVG_W = 340;
+const SVG_H = 480;
+
+function toSVG(lat, lng) {
+  const x = ((lng - BOUNDS.west)  / (BOUNDS.east  - BOUNDS.west))  * SVG_W;
+  const y = ((BOUNDS.north - lat) / (BOUNDS.north - BOUNDS.south)) * SVG_H;
   return { x, y };
 }
 
-const MAP_BOUNDS = { north: 33.35, south: 32.50, west: 34.85, east: 35.85 };
+// مضلعات تقريبية للمناطق (مرسومة يدوياً بناءً على الخريطة الحقيقية)
+function ZonePolygon({ zone, isSelected, onClick }) {
+  const c = toSVG(zone.lat, zone.lng);
+  // دائرة كـ polygon مبسط
+  const r = 18;
+  return (
+    <g onClick={onClick} style={{ cursor: "pointer" }}>
+      <circle
+        cx={c.x} cy={c.y} r={r}
+        fill={isSelected ? C.red : "rgba(200,16,46,0.13)"}
+        stroke={C.red}
+        strokeWidth={isSelected ? 2.5 : 1.5}
+        style={{ transition: "all 0.2s" }}
+      />
+    </g>
+  );
+}
 
 export default function MapPage({ cartCount = 0, onAreaSelect }) {
-  const navigate = useNavigate();
-  const [areas, setAreas] = useState([]);
+  const navigate   = useNavigate();
   const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [tooltip,  setTooltip]  = useState(null); // { x, y, zone }
 
-  useEffect(() => {
-    supabase
-      .from("delivery_zones")
-      .select("id, name, lat, lng, color, is_active")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true })
-      .then(({ data, error: err }) => {
-        if (err) setError("לא ניתן לטעון אזורים. נסה שוב.");
-        else setAreas(data || []);
-        setLoading(false);
-      });
-  }, []);
+  function handleSelect(zone) {
+    const c = toSVG(zone.lat, zone.lng);
+    if (selected?.id === zone.id) {
+      setSelected(null);
+      setTooltip(null);
+    } else {
+      setSelected(zone);
+      setTooltip({ x: c.x, y: c.y, zone });
+    }
+  }
 
   return (
-    <div style={{ position: "fixed", inset: 0, fontFamily: "Arial,sans-serif", direction: "rtl", background: "white" }}>
+    <div style={{
+      position: "fixed", inset: 0,
+      fontFamily: "Arial,sans-serif", direction: "rtl",
+      background: "#f5f0eb", display: "flex", flexDirection: "column",
+    }}>
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes slideUp { from { transform: translateY(110%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes pinPop { 0%{transform:scale(0) translateY(0);opacity:0} 70%{transform:scale(1.2) translateY(-4px)} 100%{transform:scale(1) translateY(0);opacity:1} }
+        @keyframes slideUp { from{transform:translateY(110%);opacity:0} to{transform:translateY(0);opacity:1} }
+        @keyframes fadeIn  { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
         .mBtn:active { transform: scale(0.92); }
-        .zone-pin { cursor: pointer; transition: transform 0.2s; }
-        .zone-pin:hover { transform: scale(1.15) translateY(-3px); }
+        .zone-circle { transition: all 0.18s ease; }
+        .zone-circle:hover circle { fill: rgba(200,16,46,0.28) !important; }
       `}</style>
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, zIndex: 100,
         background: "white", boxShadow: "0 1px 0 rgba(0,0,0,0.07)",
         padding: "12px 16px", display: "flex", alignItems: "center", gap: 12,
+        flexShrink: 0, zIndex: 10,
       }}>
         <button className="mBtn" onClick={() => navigate(-1)} style={{
           background: "#F3F4F6", border: "none", borderRadius: 12,
@@ -67,138 +105,126 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         </button>
         <div style={{ flex: 1, textAlign: "center" }}>
           <div style={{ fontSize: 16, fontWeight: 900, color: C.dark }}>בחר אזור משלוח</div>
-          <div style={{ fontSize: 11, marginTop: 1, fontWeight: selected ? 800 : 400, color: selected ? C.red : C.gray }}>
-            {selected ? `✓ ${selected.name}` : "לחץ על סמן האזור שלך"}
+          <div style={{ fontSize: 11, marginTop: 1, color: selected ? C.red : C.gray, fontWeight: selected ? 800 : 400 }}>
+            {selected ? `✓ ${selected.name}` : "לחץ על האזור שלך במפה"}
           </div>
         </div>
         <div style={{ width: 38 }}/>
       </div>
 
-      {/* Map Area */}
-      <div style={{
-        position: "absolute", top: 62, left: 0, right: 0,
-        bottom: selected ? 162 : 80,
-        overflow: "hidden", background: "#e8e0d8",
-        transition: "bottom 0.35s ease",
-      }}>
-        {/* OpenStreetMap tile via iframe — أبسط حل ومضمون 100% */}
-        <iframe
-          title="map"
+      {/* ── SVG Map ── */}
+      <div style={{ flex: 1, overflow: "hidden", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+
+        {/* خلفية خريطة بسيطة */}
+        <svg
+          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
           width="100%"
           height="100%"
-          style={{ border: "none", display: "block" }}
-          src={`https://www.openstreetmap.org/export/embed.html?bbox=${MAP_BOUNDS.west}%2C${MAP_BOUNDS.south}%2C${MAP_BOUNDS.east}%2C${MAP_BOUNDS.north}&layer=mapnik`}
-        />
+          style={{ display: "block", maxHeight: "100%" }}
+        >
+          {/* خلفية */}
+          <rect width={SVG_W} height={SVG_H} fill="#e8e0d5" rx="0"/>
 
-        {/* Zone pins فوق الـ iframe */}
-        {!loading && !error && areas.map(area => {
-          const pos = latLngToPercent(area.lat, area.lng, MAP_BOUNDS);
-          const isSelected = selected?.id === area.id;
-          return (
-            <div
-              key={area.id}
-              className="zone-pin"
-              onClick={() => setSelected(isSelected ? null : area)}
-              style={{
-                position: "absolute",
-                left: `${pos.x}%`,
-                top: `${pos.y}%`,
-                transform: `translate(-50%, -100%) ${isSelected ? "scale(1.2)" : "scale(1)"}`,
-                zIndex: isSelected ? 10 : 5,
-                animation: "pinPop 0.35s ease",
-              }}
-            >
-              {/* Pin shape */}
-              <div style={{
-                width: 44, height: 44, borderRadius: "50%",
-                background: isSelected ? C.red : "white",
-                border: `3px solid ${C.red}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: isSelected
-                  ? "0 4px 16px rgba(200,16,46,0.5)"
-                  : "0 3px 12px rgba(0,0,0,0.25)",
-                transition: "all 0.2s",
-              }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill={isSelected ? "white" : C.red}>
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                </svg>
-              </div>
-              {/* Tail */}
-              <div style={{
-                width: 0, height: 0,
-                borderLeft: "7px solid transparent",
-                borderRight: "7px solid transparent",
-                borderTop: `10px solid ${C.red}`,
-                margin: "0 auto",
-              }}/>
-              {/* Label */}
-              <div style={{
-                position: "absolute", top: "110%", left: "50%",
-                transform: "translateX(-50%)",
-                background: isSelected ? C.red : "white",
-                color: isSelected ? "white" : C.dark,
-                fontSize: 10, fontWeight: 800,
-                padding: "3px 7px", borderRadius: 8,
-                whiteSpace: "nowrap",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                border: `1px solid ${isSelected ? C.red : "#E5E7EB"}`,
-                marginTop: 2,
-              }}>
-                {area.name}
-              </div>
-            </div>
-          );
-        })}
+          {/* شبكة خفيفة */}
+          {Array.from({ length: 8 }).map((_, i) => (
+            <line key={`h${i}`} x1={0} y1={i * 60} x2={SVG_W} y2={i * 60} stroke="#d4ccbf" strokeWidth="0.5"/>
+          ))}
+          {Array.from({ length: 7 }).map((_, i) => (
+            <line key={`v${i}`} x1={i * 57} y1={0} x2={i * 57} y2={SVG_H} stroke="#d4ccbf" strokeWidth="0.5"/>
+          ))}
+
+          {/* طرق رئيسية تقريبية */}
+          {/* Route 85 - horizontal */}
+          <path d="M 0,295 Q 170,280 340,295" stroke="#f5c842" strokeWidth="3" fill="none" opacity="0.7"/>
+          {/* Route 70 - vertical ish */}
+          <path d="M 130,480 Q 125,350 140,200 Q 150,100 160,0" stroke="#f5c842" strokeWidth="3" fill="none" opacity="0.7"/>
+          {/* Route 805 */}
+          <path d="M 180,480 Q 200,380 185,300 Q 175,230 190,150" stroke="#e8b84b" strokeWidth="2" fill="none" opacity="0.5"/>
+
+          {/* تسميات الطرق */}
+          <rect x="155" y="272" width="28" height="14" rx="3" fill="#f5c842"/>
+          <text x="169" y="282" textAnchor="middle" fontSize="8" fontWeight="800" fill="#333">85</text>
+          <rect x="122" y="380" width="24" height="14" rx="3" fill="#f5c842"/>
+          <text x="134" y="390" textAnchor="middle" fontSize="8" fontWeight="800" fill="#333">70</text>
+
+          {/* المناطق */}
+          {ZONES.map(zone => {
+            const c = toSVG(zone.lat, zone.lng);
+            const isSelected = selected?.id === zone.id;
+            return (
+              <g
+                key={zone.id}
+                className="zone-circle"
+                onClick={() => handleSelect(zone)}
+                style={{ cursor: "pointer" }}
+              >
+                {/* ظل */}
+                <circle cx={c.x+1} cy={c.y+2} r={isSelected ? 20 : 16} fill="rgba(0,0,0,0.12)"/>
+                {/* الدائرة */}
+                <circle
+                  cx={c.x} cy={c.y} r={isSelected ? 20 : 16}
+                  fill={isSelected ? C.red : "white"}
+                  stroke={C.red}
+                  strokeWidth={isSelected ? 0 : 2}
+                />
+                {/* أيقونة pin */}
+                <text x={c.x} y={c.y + 5} textAnchor="middle" fontSize={isSelected ? 16 : 13} fill={isSelected ? "white" : C.red}>
+                  ●
+                </text>
+                {/* اسم المنطقة تحت الدائرة */}
+                <text
+                  x={c.x} y={c.y + (isSelected ? 33 : 29)}
+                  textAnchor="middle"
+                  fontSize={isSelected ? 9 : 7.5}
+                  fontWeight={isSelected ? "900" : "700"}
+                  fill={isSelected ? C.red : C.dark}
+                >
+                  {zone.name}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* compass */}
+          <g transform="translate(310, 30)">
+            <circle cx="0" cy="0" r="16" fill="white" opacity="0.85"/>
+            <text x="0" y="-5" textAnchor="middle" fontSize="9" fontWeight="900" fill={C.dark}>N</text>
+            <text x="0" y="8"  textAnchor="middle" fontSize="7" fill={C.gray}>↑</text>
+          </g>
+
+          {/* logo منطقة الجليل */}
+          <text x="14" y="20" fontSize="9" fill={C.gray} fontWeight="700" opacity="0.6">הגליל המערבי</text>
+        </svg>
       </div>
 
-      {/* Loading */}
-      {loading && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 60, background: "rgba(255,255,255,0.9)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: "50%", border: "3px solid rgba(200,16,46,0.15)", borderTopColor: C.red, animation: "spin 0.8s linear infinite" }}/>
-          <div style={{ color: C.gray, fontSize: 13, fontWeight: 700 }}>טוען אזורים...</div>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && !loading && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 60, background: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 24 }}>
-          <div style={{ fontSize: 40 }}>⚠️</div>
-          <div style={{ color: C.dark, fontSize: 15, fontWeight: 700, textAlign: "center" }}>{error}</div>
-          <button onClick={() => window.location.reload()} style={{ background: C.red, color: "white", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
-            נסה שוב
-          </button>
-        </div>
-      )}
-
-      {/* Empty */}
-      {!loading && !error && areas.length === 0 && (
-        <div style={{ position: "absolute", inset: 0, zIndex: 60, background: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
-          <div style={{ fontSize: 40 }}>🗺️</div>
-          <div style={{ color: C.dark, fontSize: 15, fontWeight: 700 }}>אין אזורים פעילים כרגע</div>
-        </div>
-      )}
-
-      {/* Selected Card */}
+      {/* ── Selected Card ── */}
       {selected && (
         <div style={{
-          position: "absolute", bottom: 80, left: 0, right: 0, zIndex: 50,
+          position: "absolute", bottom: 72, left: 0, right: 0, zIndex: 50,
           background: "white", borderRadius: "22px 22px 0 0",
           padding: "14px 20px 18px",
           boxShadow: "0 -6px 28px rgba(0,0,0,0.13)",
-          animation: "slideUp 0.32s cubic-bezier(0.34,1.1,0.64,1)",
+          animation: "slideUp 0.3s ease",
         }}>
           <div style={{ width: 36, height: 4, background: "#E5E7EB", borderRadius: 2, margin: "0 auto 14px" }}/>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(200,16,46,0.07)", border: "1.5px solid rgba(200,16,46,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: "rgba(200,16,46,0.08)", border: "1.5px solid rgba(200,16,46,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill={C.red}>
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 900, color: C.dark }}>{selected.name}</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: C.dark }}>{selected.name}</div>
               <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 700, marginTop: 2 }}>✓ אזור פעיל • משלוח זמין</div>
             </div>
-            <button onClick={() => setSelected(null)} style={{ background: "#F3F4F6", border: "none", borderRadius: "50%", width: 30, height: 30, cursor: "pointer", fontSize: 14, color: C.gray }}>✕</button>
+            <button onClick={() => setSelected(null)} style={{
+              background: "#F3F4F6", border: "none", borderRadius: "50%",
+              width: 30, height: 30, cursor: "pointer", fontSize: 14, color: C.gray,
+            }}>✕</button>
           </div>
           <button className="mBtn" onClick={() => { onAreaSelect?.(selected); navigate("/"); }} style={{
             width: "100%", background: `linear-gradient(135deg, ${C.red}, #a00020)`,
@@ -211,7 +237,8 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         </div>
       )}
 
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 99 }}>
+      {/* ── Bottom Nav ── */}
+      <div style={{ flexShrink: 0, zIndex: 10 }}>
         <BottomNav cartCount={cartCount}/>
       </div>
     </div>
