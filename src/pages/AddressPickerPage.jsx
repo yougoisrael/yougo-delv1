@@ -8,8 +8,8 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+
+
 
 const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280", light: "#F9FAFB" };
 
@@ -85,47 +85,62 @@ export default function AddressPickerPage({ onAddressSave }) {
   useEffect(() => {
     if (step !== "map" || !mapRef.current || leafRef.current) return;
 
-    const map = L.map(mapRef.current, {
-      center: [coords.lat, coords.lng],
-      zoom: 15,
-      zoomControl: false,
-      attributionControl: false,
-    });
+    async function initMap() {
+      const L = (await import("leaflet")).default;
+      await import("leaflet/dist/leaflet.css");
 
-    const tile = L.tileLayer(darkMode ? TILE_DARK : TILE_LIGHT, { maxZoom: 19 });
-    tile.addTo(map);
-    tileRef.current = tile;
-    leafRef.current = map;
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        iconUrl:       "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        shadowUrl:     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      });
 
-    // Try to get current location
-    navigator.geolocation?.getCurrentPosition(
-      pos => {
-        const { latitude: lat, longitude: lng } = pos.coords;
+      const map = L.map(mapRef.current, {
+        center: [coords.lat, coords.lng],
+        zoom: 15,
+        zoomControl: false,
+        attributionControl: false,
+      });
+
+      const tile = L.tileLayer(darkMode ? TILE_DARK : TILE_LIGHT, { maxZoom: 19 });
+      tile.addTo(map);
+      tileRef.current = tile;
+      leafRef.current = map;
+
+      // Try to get current location
+      navigator.geolocation?.getCurrentPosition(
+        pos => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          setCoords({ lat, lng });
+          map.setView([lat, lng], 16);
+          reverseGeocode(lat, lng);
+        },
+        () => {
+          reverseGeocode(coords.lat, coords.lng);
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+
+      // Drag events for pin bounce
+      map.on("movestart", () => setDragging(true));
+      map.on("moveend",   () => {
+        setDragging(false);
+        const { lat, lng } = map.getCenter();
         setCoords({ lat, lng });
-        map.setView([lat, lng], 16);
-        reverseGeocode(lat, lng);
-      },
-      () => {
-        // Fallback: geocode the default center
-        reverseGeocode(coords.lat, coords.lng);
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
+        debouncedGeocode(lat, lng);
+      });
+    }
 
-    // Drag events for pin bounce
-    map.on("movestart", () => setDragging(true));
-    map.on("moveend",   () => {
-      setDragging(false);
-      const { lat, lng } = map.getCenter();
-      setCoords({ lat, lng });
-      debouncedGeocode(lat, lng);
-    });
+    initMap();
 
     return () => {
       clearTimeout(debounceRef.current);
-      map.remove();
-      leafRef.current = null;
-      tileRef.current = null;
+      if (leafRef.current) {
+        leafRef.current.remove();
+        leafRef.current = null;
+        tileRef.current = null;
+      }
     };
   }, [step]);
 
