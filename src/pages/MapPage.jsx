@@ -12,7 +12,6 @@ const AREAS = [
     lat: 32.907,
     lng: 35.355,
     radius: 10000,
-    color: "#C8102E",
   },
   {
     id: "center",
@@ -21,7 +20,6 @@ const AREAS = [
     lat: 32.918,
     lng: 35.295,
     radius: 8000,
-    color: "#1d4ed8",
   },
   {
     id: "north",
@@ -30,17 +28,19 @@ const AREAS = [
     lat: 32.987,
     lng: 35.322,
     radius: 8500,
-    color: "#16a34a",
   },
 ];
 
+// حدود الشمال — الكاميرا ما تطلع برة
+const NORTH_BOUNDS = [[32.70, 35.05], [33.20, 35.60]];
+
 export default function MapPage({ cartCount = 0, onAreaSelect }) {
-  const navigate    = useNavigate();
-  const mapRef      = useRef(null);
-  const leafRef     = useRef(null);
-  const circlesRef  = useRef({});
-  const [ready,     setReady]    = useState(false);
-  const [selected,  setSelected] = useState(null);
+  const navigate   = useNavigate();
+  const mapRef     = useRef(null);
+  const leafRef    = useRef(null);
+  const circleRef  = useRef(null); // دائرة واحدة فقط تظهر عند الضغط
+  const [ready,    setReady]    = useState(false);
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     if (window.L) { setReady(true); return; }
@@ -61,40 +61,37 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     const L = window.L;
 
     const map = L.map(mapRef.current, {
-      center: [32.935, 35.325],
+      center: [32.945, 35.325],
       zoom: 11,
       zoomControl: false,
       attributionControl: false,
       minZoom: 10,
       maxZoom: 14,
+      maxBounds: NORTH_BOUNDS,
+      maxBoundsViscosity: 1.0, // يرجع بنعومة لو طلع برة
     });
 
     L.tileLayer(
       "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-      { maxZoom: 19 }
+      { maxZoom: 19, updateWhenIdle: true, keepBuffer: 2 }
     ).addTo(map);
 
     leafRef.current = map;
 
+    // ٣ pins أحمر فقط — بدون دوائر
     AREAS.forEach(area => {
-      // دائرة شفافة
-      const circle = L.circle([area.lat, area.lng], {
-        radius:      area.radius,
-        color:       area.color,
-        weight:      2,
-        opacity:     0.7,
-        fillColor:   area.color,
-        fillOpacity: 0.08,
-      }).addTo(map);
-
-      circle.on("click", () => selectArea(area, map, L));
-
-      // pin صغير في المنتصف
       const icon = L.divIcon({
-        html: `<div class="yg-pin" id="pin-${area.id}" style="--col:${area.color}">
-          <div class="yg-dot"></div>
-          <div class="yg-lbl">${area.short}</div>
-        </div>`,
+        html: `
+          <div class="yg-pin" id="pin-${area.id}">
+            <div class="yg-pin-circle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="${C.red}">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </div>
+            <div class="yg-pin-tail"></div>
+            <div class="yg-pin-label">${area.short}</div>
+          </div>
+        `,
         className:  "",
         iconSize:   [10, 10],
         iconAnchor: [5, 5],
@@ -102,56 +99,75 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
 
       L.marker([area.lat, area.lng], { icon })
         .addTo(map)
-        .on("click", e => { L.DomEvent.stopPropagation(e); selectArea(area, map, L); });
-
-      circlesRef.current[area.id] = circle;
+        .on("click", e => {
+          L.DomEvent.stopPropagation(e);
+          selectArea(area, map, L);
+        });
     });
 
-    map.on("click", () => { setSelected(null); resetPins(); });
+    map.on("click", () => deselect(map));
 
-    return () => { map.remove(); leafRef.current = null; circlesRef.current = {}; };
+    return () => {
+      map.remove();
+      leafRef.current = null;
+      circleRef.current = null;
+    };
   }, [ready]);
 
   function selectArea(area, map, L) {
-    resetPins();
-    setPinActive(area.id, true, area.color);
+    // احذف الدائرة القديمة
+    if (circleRef.current) {
+      map.removeLayer(circleRef.current);
+      circleRef.current = null;
+    }
 
-    // تحديث الدائرة - أكثر وضوحاً عند الاختيار
-    AREAS.forEach(a => {
-      const c = circlesRef.current[a.id];
-      if (!c) return;
-      if (a.id === area.id) {
-        c.setStyle({ fillOpacity: 0.18, weight: 3, opacity: 1 });
-      } else {
-        c.setStyle({ fillOpacity: 0.05, weight: 1.5, opacity: 0.4 });
-      }
-    });
+    // reset pins
+    AREAS.forEach(a => setPinActive(a.id, false));
+    setPinActive(area.id, true);
+
+    // ارسم دائرة جديدة للمنطقة المختارة فقط
+    circleRef.current = L.circle([area.lat, area.lng], {
+      radius:      area.radius,
+      color:       C.red,
+      weight:      2,
+      opacity:     0.8,
+      fillColor:   C.red,
+      fillOpacity: 0.10,
+      dashArray:   "6,4",
+    }).addTo(map);
 
     map.flyTo([area.lat, area.lng], 12, { duration: 0.5 });
     setSelected(area);
   }
 
-  function resetPins() {
-    AREAS.forEach(a => setPinActive(a.id, false, a.color));
-    AREAS.forEach(a => {
-      const c = circlesRef.current[a.id];
-      if (c) c.setStyle({ fillOpacity: 0.08, weight: 2, opacity: 0.7 });
-    });
+  function deselect(map) {
+    if (circleRef.current) {
+      map.removeLayer(circleRef.current);
+      circleRef.current = null;
+    }
+    AREAS.forEach(a => setPinActive(a.id, false));
+    setSelected(null);
   }
 
-  function setPinActive(id, active, color) {
+  function setPinActive(id, active) {
     const el = document.getElementById(`pin-${id}`);
     if (!el) return;
-    const dot = el.querySelector(".yg-dot");
-    const lbl = el.querySelector(".yg-lbl");
-    if (dot) {
-      dot.style.background = active ? color : "white";
-      dot.style.transform  = active ? "scale(1.5)" : "scale(1)";
+    const circle = el.querySelector(".yg-pin-circle");
+    const tail   = el.querySelector(".yg-pin-tail");
+    const label  = el.querySelector(".yg-pin-label");
+    if (circle) {
+      circle.style.background = active ? C.red : "white";
+      circle.style.transform  = active ? "scale(1.25)" : "scale(1)";
+      circle.style.boxShadow  = active
+        ? "0 4px 16px rgba(200,16,46,0.45)"
+        : "0 2px 8px rgba(200,16,46,0.25)";
+      circle.querySelector("svg path").setAttribute("fill", active ? "white" : C.red);
     }
-    if (lbl) {
-      lbl.style.background = active ? color  : "white";
-      lbl.style.color      = active ? "white" : "#111";
-      lbl.style.fontWeight = active ? "900"   : "700";
+    if (tail)  tail.style.borderTopColor = C.red;
+    if (label) {
+      label.style.background = active ? C.red   : "white";
+      label.style.color      = active ? "white" : C.dark;
+      label.style.fontWeight = active ? "900"   : "700";
     }
   }
 
@@ -160,22 +176,36 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
       <style>{`
         @keyframes spin    { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { transform: translateY(110%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pinPop  { 0%{transform:scale(0.4);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
         .mBtn:active { transform: scale(0.91); }
         .leaflet-container { background: #f0ece4 !important; }
-        .yg-pin { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
-        .yg-dot {
-          width: 16px; height: 16px; border-radius: 50%;
-          background: white; border: 2px solid var(--col);
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+
+        .yg-pin {
+          display: flex; flex-direction: column; align-items: center;
+          animation: pinPop 0.3s ease; cursor: pointer;
+        }
+        .yg-pin-circle {
+          width: 38px; height: 38px; border-radius: 50%;
+          background: white; border: 2.5px solid ${C.red};
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 2px 8px rgba(200,16,46,0.25);
           transition: all 0.2s ease;
         }
-        .yg-lbl {
-          background: white; color: #111;
+        .yg-pin-tail {
+          width: 0; height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 8px solid ${C.red};
+          margin-top: -1px;
+        }
+        .yg-pin-label {
+          margin-top: 3px;
+          background: white; color: ${C.dark};
           font-size: 9px; font-weight: 700;
-          padding: 2px 6px; border-radius: 6px;
+          padding: 2px 7px; border-radius: 7px;
           white-space: nowrap;
-          border: 1.5px solid var(--col);
-          box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+          border: 1.5px solid ${C.red};
+          box-shadow: 0 1px 5px rgba(0,0,0,0.12);
           transition: all 0.2s ease;
           font-family: Arial, sans-serif;
         }
@@ -200,11 +230,11 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
           <div style={{ fontSize: 16, fontWeight: 900, color: C.dark }}>בחר אזור משלוח</div>
           <div style={{
             fontSize: 11, marginTop: 1,
-            color: selected ? selected.color : C.gray,
+            color: selected ? C.red : C.gray,
             fontWeight: selected ? 800 : 400,
             transition: "color 0.25s",
           }}>
-            {selected ? `✓ ${selected.short}` : "לחץ על הדגל שלך במפה"}
+            {selected ? `✓ ${selected.short}` : "לחץ על סמן האזור שלך"}
           </div>
         </div>
         <div style={{ width: 38 }}/>
@@ -264,11 +294,10 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
             <div style={{
               width: 46, height: 46, borderRadius: 13, flexShrink: 0,
-              background: `${selected.color}15`,
-              border: `1.5px solid ${selected.color}50`,
+              background: "rgba(200,16,46,0.07)", border: "1.5px solid rgba(200,16,46,0.2)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill={selected.color}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill={C.red}>
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
             </div>
@@ -280,7 +309,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
                 ✓ אזור פעיל • משלוח זמין
               </div>
             </div>
-            <button onClick={() => { setSelected(null); resetPins(); }} style={{
+            <button onClick={() => deselect(leafRef.current)} style={{
               background: "#F3F4F6", border: "none", borderRadius: "50%",
               width: 28, height: 28, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -291,10 +320,10 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
             onClick={() => { onAreaSelect?.(selected); navigate("/"); }}
             style={{
               width: "100%",
-              background: `linear-gradient(135deg, ${selected.color}, ${selected.color}bb)`,
+              background: `linear-gradient(135deg, ${C.red}, #a00020)`,
               border: "none", borderRadius: 16, padding: "15px",
               color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer",
-              boxShadow: `0 4px 18px ${selected.color}45`,
+              boxShadow: "0 4px 18px rgba(200,16,46,0.35)",
             }}>
             בחר {selected.short} ←
           </button>
