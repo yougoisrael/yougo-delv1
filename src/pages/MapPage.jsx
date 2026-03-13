@@ -5,83 +5,20 @@ import BottomNav from "../components/BottomNav";
 const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280" };
 
 const AREAS = [
-  {
-    id: "rame", name: "ראמה - סגור - בית ג׳ן", emoji: "🏡",
-    lat: 32.946, lng: 35.378,
-    villages: [
-      { he: "ראמה",    en: "Rameh"    },
-      { he: "סגור",    en: "Sajur"    },
-      { he: "בית ג'ן", en: "Beit Jan" },
-    ],
-  },
-  {
-    id: "karmiel", name: "כרמיאל - נחף - מג׳ד - שזור", emoji: "🏙️",
-    lat: 32.920, lng: 35.310,
-    villages: [
-      { he: "כרמיאל",     en: "Karmiel"      },
-      { he: "נחף",        en: "Nahf"         },
-      { he: "מגד אל-כרום",en: "Majd al-Krum" },
-      { he: "שזור",       en: "Shezor"       },
-    ],
-  },
-  {
-    id: "magar", name: "מג׳אר", emoji: "🌿",
-    lat: 32.899, lng: 35.403,
-    villages: [
-      { he: "מג'אר", en: "Majd al-Krum" },
-    ],
-  },
-  {
-    id: "peki", name: "פקיעין - כ׳ סמיע - כסרא", emoji: "🌲",
-    lat: 32.966, lng: 35.322,
-    villages: [
-      { he: "פקיעין",    en: "Peki'in"    },
-      { he: "כפר סמיע",  en: "Kafr Sami'" },
-      { he: "כסרא-סמיע", en: "Kisra"      },
-    ],
-  },
+  { id: "rame",    name: "ראמה - סגור - בית ג׳ן",          lat: 32.946, lng: 35.378 },
+  { id: "karmiel", name: "כרמיאל - נחף - מג׳ד - שזור",     lat: 32.928, lng: 35.310 },
+  { id: "magar",   name: "מג׳אר",                           lat: 32.899, lng: 35.403 },
+  { id: "peki",    name: "פקיעין - כ׳ סמיע - כסרא",         lat: 32.969, lng: 35.322 },
 ];
 
-// Overpass query — bيجيب الـ boundary بالاسم الانجليزي
-async function fetchVillagePolygon(englishName) {
-  const q = `
-[out:json][timeout:20];
-(
-  relation["name"="${englishName}"]["boundary"="administrative"];
-  relation["name:en"="${englishName}"]["boundary"="administrative"];
-  relation["name"~"${englishName}",i]["place"~"village|town|city"];
-);
-out geom qt;`;
-
-  const res = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: q,
-  });
-  const data = await res.json();
-  const el = data?.elements?.[0];
-  if (!el?.members) return null;
-
-  // بناء الـ polygon من الـ outer ways
-  const coords = [];
-  for (const m of el.members) {
-    if (m.role === "outer" && m.geometry?.length > 0) {
-      m.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
-    }
-  }
-  return coords.length > 5 ? coords : null;
-}
-
 export default function MapPage({ cartCount = 0, onAreaSelect }) {
-  const navigate      = useNavigate();
-  const mapRef        = useRef(null);
-  const leafRef       = useRef(null);
-  const markersRef    = useRef({});
-  const polysRef      = useRef([]);
-  const cacheRef      = useRef({});
-  const [ready,       setReady]       = useState(false);
-  const [selected,    setSelected]    = useState(null);
-  const [loadingPoly, setLoadingPoly] = useState(false);
-  const [polyError,   setPolyError]   = useState(false);
+  const navigate    = useNavigate();
+  const mapRef      = useRef(null);
+  const leafRef     = useRef(null);
+  const markersRef  = useRef({});
+  const circleRef   = useRef(null);
+  const [ready,     setReady]    = useState(false);
+  const [selected,  setSelected] = useState(null);
 
   // ── Load Leaflet ──────────────────────────────
   useEffect(() => {
@@ -104,11 +41,11 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     const L = window.L;
 
     const map = L.map(mapRef.current, {
-      center: [32.935, 35.340],
+      center: [32.935, 35.350],
       zoom: 11,
       zoomControl: false,
       attributionControl: false,
-      minZoom: 9, maxZoom: 16,
+      minZoom: 9, maxZoom: 15,
     });
 
     L.tileLayer(
@@ -118,119 +55,90 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
 
     leafRef.current = map;
 
+    // Draw pin for each area
     AREAS.forEach(area => {
-      const m = L.marker([area.lat, area.lng], {
-        icon: L.divIcon({
-          html: pinHtml(area.id, false),
-          className:  "",
-          iconSize:   [44, 56],
-          iconAnchor: [22, 56],
-        }),
-      }).addTo(map);
-
-      m.on("click", e => {
-        L.DomEvent.stopPropagation(e);
-        onTap(area, map, L);
+      const icon = L.divIcon({
+        html: `
+          <div class="yg-pin" id="pin-${area.id}">
+            <div class="yg-pin-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="${C.red}">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </div>
+            <div class="yg-pin-tail"></div>
+          </div>
+        `,
+        className:  "",
+        iconSize:   [44, 54],
+        iconAnchor: [22, 54],
       });
 
-      markersRef.current[area.id] = m;
+      const marker = L.marker([area.lat, area.lng], { icon })
+        .addTo(map)
+        .on("click", e => {
+          L.DomEvent.stopPropagation(e);
+          selectArea(area, map, L);
+        });
+
+      markersRef.current[area.id] = marker;
     });
 
+    // Click map → deselect
     map.on("click", () => deselect(map));
 
     return () => {
       map.remove();
-      leafRef.current    = null;
+      leafRef.current  = null;
       markersRef.current = {};
-      polysRef.current   = [];
+      circleRef.current  = null;
     };
   }, [ready]);
 
-  function pinHtml(id, active) {
-    return `
-      <div class="yg-pin" id="pin-${id}">
-        <div class="yg-pin-circle" style="background:${active ? C.red : "white"};border:2.5px solid ${C.red};">
-          <svg width="22" height="22" viewBox="0 0 24 24">
-            <path fill="${active ? "white" : C.red}"
-              d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-          </svg>
-        </div>
-        <div class="yg-pin-tail"></div>
-      </div>`;
-  }
+  function selectArea(area, map, L) {
+    // Remove old circle
+    if (circleRef.current) { map.removeLayer(circleRef.current); circleRef.current = null; }
 
-  function setPinActive(id, active) {
-    const m = markersRef.current[id];
-    if (!m || !window.L) return;
-    m.setIcon(window.L.divIcon({
-      html:       pinHtml(id, active),
-      className:  "",
-      iconSize:   [44, 56],
-      iconAnchor: [22, 56],
-    }));
-  }
+    // Reset all pins
+    AREAS.forEach(a => setPinActive(a.id, false));
 
-  function clearPolys(map) {
-    polysRef.current.forEach(p => map?.removeLayer(p));
-    polysRef.current = [];
+    // Activate this pin
+    setPinActive(area.id, true);
+
+    // Draw circle around area
+    const circle = L.circle([area.lat, area.lng], {
+      radius:      4500,
+      color:       C.red,
+      weight:      2,
+      opacity:     0.6,
+      fillColor:   C.red,
+      fillOpacity: 0.10,
+      dashArray:   "6,4",
+    }).addTo(map);
+    circleRef.current = circle;
+
+    map.flyTo([area.lat, area.lng], 12, { duration: 0.6 });
+    setSelected(area);
   }
 
   function deselect(map) {
-    clearPolys(map);
+    if (circleRef.current && map) { map.removeLayer(circleRef.current); circleRef.current = null; }
     AREAS.forEach(a => setPinActive(a.id, false));
     setSelected(null);
-    setLoadingPoly(false);
-    setPolyError(false);
   }
 
-  async function onTap(area, map, L) {
-    // Immediate UI feedback
-    AREAS.forEach(a => setPinActive(a.id, false));
-    setPinActive(area.id, true);
-    clearPolys(map);
-    setSelected(area);
-    setLoadingPoly(true);
-    setPolyError(false);
-
-    // Check cache
-    let allCoords = cacheRef.current[area.id];
-
-    if (!allCoords) {
-      // Fetch all villages in parallel
-      const results = await Promise.all(
-        area.villages.map(v => fetchVillagePolygon(v.en).catch(() => null))
-      );
-      allCoords = results.filter(Boolean);
-      if (allCoords.length) cacheRef.current[area.id] = allCoords;
+  function setPinActive(id, active) {
+    const el = document.getElementById(`pin-${id}`);
+    if (!el) return;
+    const circle = el.querySelector(".yg-pin-circle");
+    const tail   = el.querySelector(".yg-pin-tail");
+    if (circle) {
+      circle.style.background     = active ? C.red : "white";
+      circle.style.border         = active ? `3px solid ${C.red}` : `3px solid ${C.red}`;
+      circle.style.transform      = active ? "scale(1.2)" : "scale(1)";
+      circle.querySelector("svg path").setAttribute("fill", active ? "white" : C.red);
     }
-
-    setLoadingPoly(false);
-    if (!leafRef.current) return;
-    const currentMap = leafRef.current;
-
-    if (allCoords?.length) {
-      const allPoints = [];
-      allCoords.forEach(coords => {
-        const poly = L.polygon(coords, {
-          color:        C.red,
-          weight:       2.5,
-          opacity:      0.9,
-          fillColor:    C.red,
-          fillOpacity:  0.18,
-          smoothFactor: 1.5,
-        }).addTo(currentMap);
-        polysRef.current.push(poly);
-        allPoints.push(...coords);
-      });
-
-      currentMap.flyToBounds(
-        L.latLngBounds(allPoints),
-        { padding: [60, 60], maxZoom: 14, duration: 0.7 }
-      );
-    } else {
-      // Fallback — just fly to center
-      setPolyError(true);
-      currentMap.flyTo([area.lat, area.lng], 13, { duration: 0.6 });
+    if (tail) {
+      tail.style.borderTopColor = C.red;
     }
   }
 
@@ -239,17 +147,21 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
       <style>{`
         @keyframes spin    { to { transform:rotate(360deg); } }
         @keyframes slideUp { from { transform:translateY(110%);opacity:0; } to { transform:translateY(0);opacity:1; } }
+        @keyframes pinPop  { 0%{transform:scale(0.5);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
         .leaflet-container { background:#f0ece4!important; }
         .mBtn:active { transform:scale(0.91); }
-        .yg-pin { display:flex;flex-direction:column;align-items:center; }
+
+        .yg-pin { display:flex; flex-direction:column; align-items:center; animation:pinPop 0.35s ease; }
         .yg-pin-circle {
-          width:44px;height:44px;border-radius:50%;
-          display:flex;align-items:center;justify-content:center;
-          box-shadow:0 3px 14px rgba(200,16,46,0.35);
-          transition:all 0.2s ease;cursor:pointer;
+          width:44px; height:44px; border-radius:50%;
+          background:white; border:3px solid ${C.red};
+          display:flex; align-items:center; justify-content:center;
+          box-shadow:0 3px 12px rgba(200,16,46,0.35);
+          transition:all 0.2s ease;
+          cursor:pointer;
         }
         .yg-pin-tail {
-          width:0;height:0;
+          width:0; height:0;
           border-left:7px solid transparent;
           border-right:7px solid transparent;
           border-top:10px solid ${C.red};
@@ -261,7 +173,8 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
       <div style={{
         position:"absolute",top:0,left:0,right:0,zIndex:1000,
         background:"white",boxShadow:"0 1px 0 rgba(0,0,0,0.07)",
-        padding:"12px 16px",display:"flex",alignItems:"center",gap:12,
+        padding:"12px 16px",
+        display:"flex",alignItems:"center",gap:12,
       }}>
         <button className="mBtn" onClick={() => navigate(-1)} style={{
           background:"#F3F4F6",border:"none",borderRadius:12,
@@ -273,17 +186,19 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </button>
+
         <div style={{flex:1,textAlign:"center"}}>
           <div style={{fontSize:16,fontWeight:900,color:C.dark}}>בחר אזור משלוח</div>
-          <div style={{fontSize:11,marginTop:1,transition:"color 0.25s",
+          <div style={{
+            fontSize:11,marginTop:1,
             fontWeight:selected?800:400,
             color:selected?C.red:C.gray,
+            transition:"color 0.25s",
           }}>
-            {selected
-              ? loadingPoly ? "טוען גבולות..." : `✓ ${selected.name}`
-              : "לחץ על סמן האזור שלך"}
+            {selected ? `✓ ${selected.name}` : "לחץ על סמן האזור שלך"}
           </div>
         </div>
+
         <div style={{width:38}}/>
       </div>
 
@@ -295,7 +210,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         transition:"bottom 0.35s cubic-bezier(0.34,1.1,0.64,1)",
       }}/>
 
-      {/* ── Loading Leaflet ── */}
+      {/* ── Loading ── */}
       {!ready && (
         <div style={{
           position:"absolute",inset:0,zIndex:600,background:"white",
@@ -342,24 +257,27 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
           animation:"slideUp 0.32s cubic-bezier(0.34,1.1,0.64,1)",
         }}>
           <div style={{width:36,height:4,background:"#E5E7EB",borderRadius:2,margin:"0 auto 14px"}}/>
+
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
             <div style={{
               width:48,height:48,borderRadius:14,
               background:"rgba(200,16,46,0.07)",
               border:"1.5px solid rgba(200,16,46,0.18)",
               display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:22,flexShrink:0,
-            }}>{selected.emoji}</div>
+              flexShrink:0,
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill={C.red}>
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </div>
+
             <div style={{flex:1}}>
               <div style={{fontSize:16,fontWeight:900,color:C.dark}}>{selected.name}</div>
-              <div style={{fontSize:12,marginTop:2,fontWeight:700,
-                color:loadingPoly?"#f59e0b":polyError?"#ef4444":"#16a34a",
-              }}>
-                {loadingPoly ? "⏳ טוען גבולות..."
-                  : polyError ? "✓ אזור פעיל • משלוח זמין"
-                  : "✓ אזור פעיל • משלוח זמין"}
+              <div style={{fontSize:12,color:"#16a34a",fontWeight:700,marginTop:2}}>
+                ✓ אזור פעיל • משלוח זמין
               </div>
             </div>
+
             <button className="mBtn" onClick={()=>deselect(leafRef.current)} style={{
               background:"#F3F4F6",border:"none",borderRadius:"50%",
               width:30,height:30,cursor:"pointer",flexShrink:0,
@@ -367,6 +285,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
               fontSize:14,color:C.gray,
             }}>✕</button>
           </div>
+
           <button className="mBtn"
             onClick={()=>{ onAreaSelect?.(selected); navigate("/"); }}
             style={{
@@ -375,9 +294,8 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
               border:"none",borderRadius:16,padding:"15px",
               color:"white",fontSize:15,fontWeight:900,cursor:"pointer",
               boxShadow:"0 4px 18px rgba(200,16,46,0.35)",
-              opacity:loadingPoly?0.6:1,
             }}>
-            {loadingPoly ? "⏳ רגע..." : `בחר ${selected.name} ←`}
+            בחר {selected.name} ←
           </button>
         </div>
       )}
