@@ -6,7 +6,7 @@
 //  4. Google OAuth
 //  Register: email, name, phone, gender, age, password
 // ═══════════════════════════════════════════════════════════
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
 import { supabase } from "../lib/supabase";
@@ -62,31 +62,36 @@ export default function AuthPage({onDone,onGuest,onBusiness}){
   const [rBusy,setRBusy]=useState(false);
   const [sp,setSp]=useState(false);
   const [sp2,setSp2]=useState(false);
-  const hcapWidgetId=useRef(null);
-
   useEffect(()=>{
-    if(!HCAPTCHA_SITE_KEY)return;
-    function renderWidget(){
-      const el=document.getElementById("h-captcha-container");
-      if(el&&window.hcaptcha&&hcapWidgetId.current===null){
-        hcapWidgetId.current=window.hcaptcha.render(el,{sitekey:HCAPTCHA_SITE_KEY,size:"invisible"});
-      }
-    }
-    if(window.hcaptcha){renderWidget();return;}
-    window._hcapLoad=()=>renderWidget();
+    if(!HCAPTCHA_SITE_KEY||document.getElementById("hcap-script"))return;
     const s=document.createElement("script");
-    s.src="https://js.hcaptcha.com/1/api.js?render=explicit&onload=_hcapLoad";
+    s.id="hcap-script";
+    s.src="https://js.hcaptcha.com/1/api.js?render=explicit";
     s.async=true;
     document.head.appendChild(s);
   },[]);
 
   async function getCaptchaToken(){
-    if(!HCAPTCHA_SITE_KEY||hcapWidgetId.current===null)return undefined;
-    try{
-      const{response}=await window.hcaptcha.execute(hcapWidgetId.current,{async:true});
-      window.hcaptcha.reset(hcapWidgetId.current);
-      return response;
-    }catch{return undefined;}
+    if(!HCAPTCHA_SITE_KEY)return undefined;
+    return new Promise((resolve)=>{
+      function tryExec(){
+        if(!window.hcaptcha){setTimeout(tryExec,200);return;}
+        const el=document.createElement("div");
+        el.style.display="none";
+        document.body.appendChild(el);
+        try{
+          const wid=window.hcaptcha.render(el,{
+            sitekey:HCAPTCHA_SITE_KEY,
+            size:"invisible",
+            callback:(token)=>{document.body.removeChild(el);resolve(token);},
+            "error-callback":()=>{try{document.body.removeChild(el);}catch{}resolve(undefined);},
+            "expired-callback":()=>{try{document.body.removeChild(el);}catch{}resolve(undefined);}
+          });
+          window.hcaptcha.execute(wid);
+        }catch{try{document.body.removeChild(el);}catch{}resolve(undefined);}
+      }
+      tryExec();
+    });
   }
 
   useEffect(()=>{if(screen!=="splash")return;const t=setTimeout(()=>setScreen("main"),2400);return()=>clearTimeout(t);},[screen]);
@@ -281,5 +286,4 @@ export default function AuthPage({onDone,onGuest,onBusiness}){
       <div style={{textAlign:"center",color:"#9CA3AF",fontSize:10,marginTop:16,lineHeight:1.7}}>בהמשך אתה מסכים ל<span style={{color:C.red,fontWeight:700}}>תנאי השימוש</span> ול<span style={{color:C.red,fontWeight:700}}>מדיניות הפרטיות</span></div>
     </div>
     <style>{CSS}</style>
-    <div id="h-captcha-container" style={{display:"none"}}></div>
   </div>);
