@@ -148,12 +148,21 @@ function ZoneSelector({ onFamilyMap, onSaveAndGo, cartCount = 0, user, onNeedLog
 
         {/* GPS */}
         <div style={{ padding: "18px 16px 0" }}>
-          <button className="ygbtn" onClick={detectGPS} disabled={busy} style={{
+          <button className="ygbtn" onClick={detectGPS} disabled={busy || gpsDone} style={{
             width: "100%", border: "none", borderRadius: 18, padding: 0,
-            background: busy ? "#F3F4F6" : `linear-gradient(135deg,${RED},#9B0B22)`,
-            boxShadow: busy ? "none" : "0 6px 22px rgba(200,16,46,.36)",
-            cursor: busy ? "default" : "pointer", overflow: "hidden",
+            background: gpsDone
+              ? "linear-gradient(135deg,#16A34A,#14532D)"
+              : busy
+                ? "#F3F4F6"
+                : `linear-gradient(135deg,${RED},#9B0B22)`,
+            boxShadow: gpsDone
+              ? "0 6px 22px rgba(22,163,74,.40)"
+              : busy
+                ? "none"
+                : "0 6px 22px rgba(200,16,46,.36)",
+            cursor: busy || gpsDone ? "default" : "pointer", overflow: "hidden",
             fontFamily: "inherit",
+            transition: "background 0.5s ease, box-shadow 0.5s ease",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px" }}>
               <div style={{
@@ -163,23 +172,27 @@ function ZoneSelector({ onFamilyMap, onSaveAndGo, cartCount = 0, user, onNeedLog
               }}>
                 {busy
                   ? <div style={{ width:22,height:22,borderRadius:"50%",border:"2.5px solid #D1D5DB",borderTopColor:RED,animation:"addrSpin .75s linear infinite" }}/>
-                  : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
-                      <circle cx="12" cy="12" r="3" fill="white" stroke="none"/>
-                      <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
-                      <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
-                      <circle cx="12" cy="12" r="8"/>
-                    </svg>
+                  : gpsDone
+                    ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
+                        <circle cx="12" cy="12" r="3" fill="white" stroke="none"/>
+                        <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+                        <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+                        <circle cx="12" cy="12" r="8"/>
+                      </svg>
                 }
               </div>
               <div style={{ flex: 1, textAlign: "right" }}>
                 <div style={{ fontSize:15,fontWeight:900,color:busy?DARK:"white",lineHeight:1.2 }}>
-                  {busy ? "מאתר מיקום..." : "זיהוי אוטומטי של המיקום שלי"}
+                  {busy ? "מאתר מיקום..." : gpsDone ? "✅ המיקום נשמר בהצלחה!" : "זיהוי אוטומטי של המיקום שלי"}
                 </div>
-                <div style={{ fontSize:11,color:busy?GRAY:"rgba(255,255,255,.68)",marginTop:3 }}>
-                  {busy ? "אנא המתן" : "GPS · מיידי · מעבר ישיר למסעדות"}
+                <div style={{ fontSize:11,color:busy?GRAY:"rgba(255,255,255,.75)",marginTop:3 }}>
+                  {busy ? "אנא המתן" : gpsDone ? "עובר למסעדות..." : "GPS · מיידי · מעבר ישיר למסעדות"}
                 </div>
               </div>
-              {!busy && (
+              {!busy && !gpsDone && (
                 <div style={{ width:28,height:28,borderRadius:9,background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center" }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                     <polyline points="9 18 15 12 9 6"/>
