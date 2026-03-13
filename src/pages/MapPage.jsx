@@ -1,27 +1,14 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  MapPage.jsx — ✅ Fixed v3
-//  - Zones loaded from Supabase (not hardcoded!)
-//  - Leaflet imported via npm (not CDN script tag)
-//  - Dark mode tile support
-//  - Loading + error states
+//  MapPage.jsx — ✅ Fixed v4
+//  - Leaflet loaded via dynamic import to avoid Vite CSS issues
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import L from "leaflet";
 import { supabase } from "../lib/supabase";
 import BottomNav from "../components/BottomNav";
 
-// Fix Leaflet icon paths broken by Vite bundler
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
-
 const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280" };
 
-// Tile URLs — light & dark
 const TILE_LIGHT = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 const TILE_DARK  = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 
@@ -32,6 +19,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
   const markersRef = useRef({});
   const circleRef  = useRef(null);
   const tileRef    = useRef(null);
+  const LRef       = useRef(null);
 
   const [areas,    setAreas]    = useState([]);
   const [selected, setSelected] = useState(null);
@@ -63,61 +51,82 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     fetchZones();
   }, []);
 
-  // ── 2. Init map once areas are ready ─────────────
+  // ── 2. Load Leaflet dynamically then init map ─────
   useEffect(() => {
     if (loading || !mapRef.current || leafRef.current) return;
 
-    const map = L.map(mapRef.current, {
-      center: [32.935, 35.350],
-      zoom: 11,
-      zoomControl: false,
-      attributionControl: false,
-      minZoom: 9,
-      maxZoom: 16,
-    });
+    async function initMap() {
+      // Dynamic import avoids Vite CSS bundling issues
+      const L = (await import("leaflet")).default;
+      await import("leaflet/dist/leaflet.css");
 
-    // Tile layer
-    const tile = L.tileLayer(darkMode ? TILE_DARK : TILE_LIGHT, { maxZoom: 19 });
-    tile.addTo(map);
-    tileRef.current = tile;
-    leafRef.current = map;
-
-    // Draw markers for each zone
-    areas.forEach(area => {
-      const icon = L.divIcon({
-        html: `
-          <div class="yg-pin" id="pin-${area.id}">
-            <div class="yg-pin-circle">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="${C.red}">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-              </svg>
-            </div>
-            <div class="yg-pin-tail"></div>
-          </div>
-        `,
-        className: "",
-        iconSize: [44, 54],
-        iconAnchor: [22, 54],
+      // Fix broken icon paths in production builds
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        iconUrl:       "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        shadowUrl:     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
       });
 
-      const marker = L.marker([area.lat, area.lng], { icon })
-        .addTo(map)
-        .on("click", e => {
-          L.DomEvent.stopPropagation(e);
-          selectArea(area, map);
+      LRef.current = L;
+
+      const map = L.map(mapRef.current, {
+        center: [32.935, 35.350],
+        zoom: 11,
+        zoomControl: false,
+        attributionControl: false,
+        minZoom: 9,
+        maxZoom: 16,
+      });
+
+      const tile = L.tileLayer(darkMode ? TILE_DARK : TILE_LIGHT, { maxZoom: 19 });
+      tile.addTo(map);
+      tileRef.current = tile;
+      leafRef.current = map;
+
+      areas.forEach(area => {
+        const icon = L.divIcon({
+          html: `
+            <div class="yg-pin" id="pin-${area.id}">
+              <div class="yg-pin-circle">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="${C.red}">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+              </div>
+              <div class="yg-pin-tail"></div>
+            </div>
+          `,
+          className: "",
+          iconSize: [44, 54],
+          iconAnchor: [22, 54],
         });
 
-      markersRef.current[area.id] = marker;
+        const marker = L.marker([area.lat, area.lng], { icon })
+          .addTo(map)
+          .on("click", e => {
+            L.DomEvent.stopPropagation(e);
+            selectArea(area, map, L);
+          });
+
+        markersRef.current[area.id] = marker;
+      });
+
+      map.on("click", () => deselect(map, L));
+    }
+
+    initMap().catch(e => {
+      console.error("Map init error:", e);
+      setError("שגיאה בטעינת המפה. נסה שוב.");
     });
 
-    map.on("click", () => deselect(map));
-
     return () => {
-      map.remove();
-      leafRef.current  = null;
-      markersRef.current = {};
-      circleRef.current  = null;
-      tileRef.current    = null;
+      if (leafRef.current) {
+        leafRef.current.remove();
+        leafRef.current  = null;
+        markersRef.current = {};
+        circleRef.current  = null;
+        tileRef.current    = null;
+      }
     };
   }, [loading, areas]);
 
@@ -130,7 +139,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
   }, [darkMode]);
 
   // ── Helpers ───────────────────────────────────────
-  function selectArea(area, map) {
+  function selectArea(area, map, L) {
     if (circleRef.current) { map.removeLayer(circleRef.current); circleRef.current = null; }
     areas.forEach(a => setPinActive(a.id, false));
     setPinActive(area.id, true);
@@ -150,7 +159,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     setSelected(area);
   }
 
-  function deselect(map) {
+  function deselect(map, L) {
     if (circleRef.current && map) { map.removeLayer(circleRef.current); circleRef.current = null; }
     areas.forEach(a => setPinActive(a.id, false));
     setSelected(null);
@@ -224,7 +233,6 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
           </div>
         </div>
 
-        {/* Dark mode toggle */}
         <button className="mBtn" onClick={() => setDarkMode(d => !d)} style={{
           background: "#F3F4F6", border: "none", borderRadius: 10,
           width: 36, height: 36, cursor: "pointer",
@@ -342,7 +350,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
               </div>
             </div>
 
-            <button className="mBtn" onClick={() => deselect(leafRef.current)} style={{
+            <button className="mBtn" onClick={() => deselect(leafRef.current, LRef.current)} style={{
               background: "#F3F4F6", border: "none", borderRadius: "50%",
               width: 30, height: 30, cursor: "pointer", flexShrink: 0,
               display: "flex", alignItems: "center", justifyContent: "center",
