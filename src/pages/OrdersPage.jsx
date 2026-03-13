@@ -93,7 +93,6 @@ function OrderProgress({ status }) {
 
 export default function OrdersPage({ cartCount, user, guest, onLogin }) {
   const navigate = useNavigate();
-  if (guest) return <GuestBanner onLogin={onLogin} message="כדי לצפות בהזמנות, יש להתחבר" />;
 
   const [tab, setTab]       = useState("all");
   const [orders, setOrders] = useState([]);
