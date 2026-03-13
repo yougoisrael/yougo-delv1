@@ -253,6 +253,10 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
       setTimeout(() => document.getElementById("o0")?.focus(), 100);
       return;
     }
+    // صفّر حقول كلمة السر قبل ما نفتح المودال
+    setPass("");
+    setPass2("");
+    setPassErr("");
     setModal("password");
   }
 
