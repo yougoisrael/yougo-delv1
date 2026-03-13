@@ -1,45 +1,55 @@
-import { useEffect, useRef, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
-const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280", green: "#16a34a" };
+const RED = "#C8102E";
+const DARK = "#0f172a";
+const ZONES = [
+  { id: "rame",    name: "ראמה - סגור - בית ג׳ן",       lat: 32.9386, lng: 35.3731, color: "#C8102E" },
+  { id: "karmiel", name: "כרמיאל - נחף - שזור - חורפיש", lat: 32.9200, lng: 35.3050, color: "#2563eb" },
+  { id: "magar",  name: "מג׳אר",                         lat: 32.8980, lng: 35.4028, color: "#16a34a" },
+  { id: "peki",   name: "פקיעין - כסרא-סומיע",           lat: 32.9650, lng: 35.3150, color: "#9333ea" },
+];
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+const TOOLS = [
+  { id: "polygon",  icon: "✏️",  label: "מצולע חופשי" },
+  { id: "circle",   icon: "⭕",  label: "עיגול" },
+  { id: "rect",     icon: "▭",   label: "מלבן" },
+  { id: "edit",     icon: "🔧",  label: "עריכת נקודות" },
+];
 
 export default function AdminZonesPage() {
-  const mapRef     = useRef(null);
-  const leafRef    = useRef(null);
-  const polyRef    = useRef(null);   // الـ polygon الحالي على الخريطة
-  const pointsRef  = useRef([]);     // النقاط اللي رسمناها
+  const navigate = useNavigate();
+  const mapRef   = useRef(null);
+  const leafRef  = useRef(null);
+  const stateRef = useRef({
+    tool: "polygon", zone: null, drawing: false,
+    points: [], tempMarkers: [], tempPoly: null,
+    allLayers: {}, history: [],
+    circleCenter: null, circleMarker: null, circleLayer: null,
+    rectStart: null, rectLayer: null,
+  });
 
-  const [ready,    setReady]   = useState(false);
-  const [zones,    setZones]   = useState([]);
-  const [selected, setSelected]= useState(null); // المنطقة المختارة للتعديل
-  const [drawing,  setDrawing] = useState(false);
-  const [points,   setPoints]  = useState([]);
-  const [saving,   setSaving]  = useState(false);
-  const [msg,      setMsg]     = useState("");
-
-  // جلب المناطق
-  useEffect(() => {
-    supabase.from("delivery_zones").select("*").eq("is_active", true)
-      .then(({ data }) => data && setZones(data));
-  }, []);
+  const [ready,      setReady]      = useState(false);
+  const [activeZone, setActiveZone] = useState(null);
+  const [activeTool, setActiveTool] = useState("polygon");
+  const [saved,      setSaved]      = useState({});
+  const [saving,     setSaving]     = useState(false);
+  const [msg,        setMsg]        = useState(null);
+  const [pointCount, setPointCount] = useState(0);
+  const [opacity,    setOpacity]    = useState(0.3);
+  const [strokeW,    setStrokeW]    = useState(2.5);
 
   // Load Leaflet
   useEffect(() => {
     if (window.L) { setReady(true); return; }
-    const css = Object.assign(document.createElement("link"), {
-      rel: "stylesheet",
-      href: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css",
-    });
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
     document.head.appendChild(css);
-    const js = Object.assign(document.createElement("script"), {
-      src: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js",
-      onload: () => setReady(true),
-    });
+    const js = document.createElement("script");
+    js.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    js.onload = () => setReady(true);
     document.head.appendChild(js);
   }, []);
 
@@ -47,260 +57,494 @@ export default function AdminZonesPage() {
   useEffect(() => {
     if (!ready || !mapRef.current || leafRef.current) return;
     const L = window.L;
-
     const map = L.map(mapRef.current, {
-      center: [32.930, 35.345],
-      zoom: 11,
-      zoomControl: true,
-      attributionControl: false,
+      center: [32.930, 35.345], zoom: 11,
+      zoomControl: false, attributionControl: false,
     });
-
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-      { maxZoom: 19 }
-    ).addTo(map);
-
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", { maxZoom: 19 }).addTo(map);
     leafRef.current = map;
 
-    // كل نقرة على الخريطة تضيف نقطة للـ polygon
-    map.on("click", e => {
-      if (!drawingRef.current) return;
-      const pt = [e.latlng.lat, e.latlng.lng];
-      pointsRef.current = [...pointsRef.current, pt];
-      setPoints([...pointsRef.current]);
-      redrawPolygon(map, L);
-    });
+    // Load existing zones from Supabase
+    loadZones();
+
+    map.on("click",       onMapClick);
+    map.on("dblclick",    onMapDblClick);
+    map.on("mousemove",   onMapMouseMove);
 
     return () => { map.remove(); leafRef.current = null; };
   }, [ready]);
 
-  // نحتاج ref للـ drawing state عشان يشتغل في الـ event listener
-  const drawingRef = useRef(false);
-  useEffect(() => { drawingRef.current = drawing; }, [drawing]);
-
-  function redrawPolygon(map, L) {
-    const m = map || leafRef.current;
-    const l = L || window.L;
-    if (!m || !l) return;
-
-    // احذف القديم
-    if (polyRef.current) m.removeLayer(polyRef.current);
-
-    const pts = pointsRef.current;
-    if (pts.length < 2) return;
-
-    // ارسم الجديد
-    polyRef.current = l.polygon(pts, {
-      color: C.red, weight: 2.5, opacity: 0.9,
-      fillColor: C.red, fillOpacity: 0.2,
-      dashArray: "6,4",
-    }).addTo(m);
+  async function loadZones() {
+    try {
+      const { data } = await supabase.from("delivery_zones").select("*");
+      if (!data) return;
+      const savedMap = {};
+      data.forEach(z => {
+        if (z.polygon) savedMap[z.id] = true;
+      });
+      setSaved(savedMap);
+    } catch(e) {}
   }
 
-  function startDraw(zone) {
-    setSelected(zone);
-    setDrawing(true);
-    pointsRef.current = [];
-    setPoints([]);
-    setMsg("🖊️ انقر على الخريطة لرسم حدود المنطقة. انقر نقرتين للإنهاء.");
+  function showMsg(text, type = "success") {
+    setMsg({ text, type });
+    setTimeout(() => setMsg(null), 3000);
+  }
 
-    // عرض الـ polygon الحالي لو موجود
+  function getColor() {
+    const z = ZONES.find(z => z.id === stateRef.current.zone);
+    return z?.color || RED;
+  }
+
+  function clearTemp() {
     const L = window.L;
     const map = leafRef.current;
     if (!map || !L) return;
-    if (polyRef.current) map.removeLayer(polyRef.current);
-    if (zone.polygon?.length > 2) {
-      polyRef.current = L.polygon(zone.polygon, {
-        color: C.gray, weight: 1.5, opacity: 0.5,
-        fillColor: C.gray, fillOpacity: 0.1,
-      }).addTo(map);
-    }
-    map.flyTo([zone.center_lat, zone.center_lng], 13, { duration: 0.7 });
-
-    // نقرة مزدوجة تنهي الرسم
-    map.once("dblclick", () => finishDraw());
+    const s = stateRef.current;
+    s.tempMarkers.forEach(m => map.removeLayer(m));
+    s.tempMarkers = [];
+    if (s.tempPoly)    { map.removeLayer(s.tempPoly);    s.tempPoly = null; }
+    if (s.circleMarker){ map.removeLayer(s.circleMarker); s.circleMarker = null; }
+    if (s.circleLayer) { map.removeLayer(s.circleLayer);  s.circleLayer = null; }
+    if (s.rectLayer)   { map.removeLayer(s.rectLayer);    s.rectLayer = null; }
+    s.points = []; s.circleCenter = null; s.rectStart = null;
+    s.drawing = false;
+    setPointCount(0);
   }
 
-  function finishDraw() {
-    setDrawing(false);
-    setMsg(pointsRef.current.length > 2
-      ? `✓ رسمت ${pointsRef.current.length} نقطة — اضغط "حفظ" لحفظ المنطقة`
-      : "⚠️ ارسم أكثر من نقطتين");
+  function onMapClick(e) {
+    const s = stateRef.current;
+    if (!s.zone) { showMsg("בחר אזור תחילה!", "error"); return; }
+    const L = window.L;
+    const map = leafRef.current;
+    const { lat, lng } = e.latlng;
+    const color = getColor();
+
+    if (s.tool === "polygon") {
+      s.drawing = true;
+      s.points.push([lat, lng]);
+      setPointCount(s.points.length);
+
+      // dot marker
+      const dot = L.circleMarker([lat, lng], {
+        radius: 5, color, fillColor: "white",
+        fillOpacity: 1, weight: 2,
+      }).addTo(map);
+      s.tempMarkers.push(dot);
+
+      // update preview polygon
+      if (s.tempPoly) map.removeLayer(s.tempPoly);
+      if (s.points.length >= 2) {
+        s.tempPoly = L.polygon(s.points, {
+          color, weight: strokeW, opacity: 0.8,
+          fillColor: color, fillOpacity: opacity,
+          dashArray: "8,4",
+        }).addTo(map);
+      }
+    }
+
+    else if (s.tool === "circle") {
+      if (!s.circleCenter) {
+        s.circleCenter = [lat, lng];
+        s.drawing = true;
+        s.circleMarker = L.circleMarker([lat, lng], {
+          radius: 8, color, fillColor: color, fillOpacity: 1,
+        }).addTo(map);
+        showMsg("עכשיו לחץ על נקודה שנייה להגדרת הרדיוס");
+      } else {
+        // calc radius
+        const R = map.distance(s.circleCenter, [lat, lng]);
+        if (s.circleLayer) map.removeLayer(s.circleLayer);
+        s.circleLayer = L.circle(s.circleCenter, {
+          radius: R, color, weight: strokeW, opacity: 0.85,
+          fillColor: color, fillOpacity: opacity,
+        }).addTo(map);
+        s.points = [s.circleCenter, R]; // store center+radius
+        setPointCount(1);
+      }
+    }
+
+    else if (s.tool === "rect") {
+      if (!s.rectStart) {
+        s.rectStart = [lat, lng];
+        s.drawing = true;
+        showMsg("עכשיו לחץ על הפינה השנייה");
+      } else {
+        const bounds = L.latLngBounds(s.rectStart, [lat, lng]);
+        if (s.rectLayer) map.removeLayer(s.rectLayer);
+        s.rectLayer = L.rectangle(bounds, {
+          color, weight: strokeW, opacity: 0.85,
+          fillColor: color, fillOpacity: opacity,
+        }).addTo(map);
+        // convert rect to polygon points
+        s.points = [
+          [bounds.getNorth(), bounds.getWest()],
+          [bounds.getNorth(), bounds.getEast()],
+          [bounds.getSouth(), bounds.getEast()],
+          [bounds.getSouth(), bounds.getWest()],
+        ];
+        setPointCount(4);
+      }
+    }
+  }
+
+  function onMapMouseMove(e) {
+    const s = stateRef.current;
+    if (!s.drawing) return;
+    const L = window.L;
+    const map = leafRef.current;
+    const { lat, lng } = e.latlng;
+    const color = getColor();
+
+    if (s.tool === "polygon" && s.points.length >= 1) {
+      if (s.tempPoly) map.removeLayer(s.tempPoly);
+      s.tempPoly = L.polygon([...s.points, [lat, lng]], {
+        color, weight: strokeW, opacity: 0.7,
+        fillColor: color, fillOpacity: opacity * 0.6,
+        dashArray: "8,4",
+      }).addTo(map);
+    }
+
+    if (s.tool === "circle" && s.circleCenter) {
+      const R = map.distance(s.circleCenter, [lat, lng]);
+      if (s.circleLayer) map.removeLayer(s.circleLayer);
+      s.circleLayer = L.circle(s.circleCenter, {
+        radius: R, color, weight: strokeW, opacity: 0.6,
+        fillColor: color, fillOpacity: opacity * 0.6, dashArray: "8,4",
+      }).addTo(map);
+    }
+
+    if (s.tool === "rect" && s.rectStart) {
+      const bounds = L.latLngBounds(s.rectStart, [lat, lng]);
+      if (s.rectLayer) map.removeLayer(s.rectLayer);
+      s.rectLayer = L.rectangle(bounds, {
+        color, weight: strokeW, opacity: 0.6,
+        fillColor: color, fillOpacity: opacity * 0.6, dashArray: "8,4",
+      }).addTo(map);
+    }
+  }
+
+  function onMapDblClick(e) {
+    window.L?.DomEvent?.preventDefault(e);
+    const s = stateRef.current;
+    if (s.tool === "polygon" && s.points.length >= 3) {
+      finishPolygon();
+    }
+  }
+
+  function finishPolygon() {
+    const s = stateRef.current;
+    if (s.points.length < 3) { showMsg("צריך לפחות 3 נקודות!", "error"); return; }
+    commitShape(s.points, "polygon");
+  }
+
+  function commitShape(points, type) {
+    const s = stateRef.current;
+    const L = window.L;
+    const map = leafRef.current;
+    const color = getColor();
+
+    // save to history
+    s.history.push({ zone: s.zone, type, points: [...points] });
+
+    // draw final layer
+    let layer;
+    if (type === "polygon") {
+      layer = L.polygon(points, {
+        color, weight: strokeW, opacity: 0.9,
+        fillColor: color, fillOpacity: opacity,
+      }).addTo(map);
+    } else if (type === "circle") {
+      layer = L.circle(points[0], {
+        radius: points[1], color, weight: strokeW, opacity: 0.9,
+        fillColor: color, fillOpacity: opacity,
+      }).addTo(map);
+    }
+
+    if (!s.allLayers[s.zone]) s.allLayers[s.zone] = [];
+    s.allLayers[s.zone].push({ layer, type, points: [...points] });
+
+    clearTemp();
+    showMsg(`✅ צורה נוספה! לחץ שמור לשמירה`);
   }
 
   function undoLast() {
-    if (!pointsRef.current.length) return;
-    pointsRef.current = pointsRef.current.slice(0, -1);
-    setPoints([...pointsRef.current]);
-    redrawPolygon();
-  }
-
-  function clearDraw() {
-    pointsRef.current = [];
-    setPoints([]);
-    if (polyRef.current && leafRef.current) {
-      leafRef.current.removeLayer(polyRef.current);
-      polyRef.current = null;
+    const s = stateRef.current;
+    const map = leafRef.current;
+    if (!s.zone || !s.allLayers[s.zone]?.length) {
+      clearTemp();
+      return;
     }
-    setMsg("");
+    const last = s.allLayers[s.zone].pop();
+    if (last?.layer) map.removeLayer(last.layer);
+    s.history.pop();
+    showMsg("↩ בוטל");
   }
 
-  async function savePolygon() {
-    if (!selected || pointsRef.current.length < 3) return;
+  function clearZone() {
+    const s = stateRef.current;
+    const map = leafRef.current;
+    if (!s.zone) return;
+    (s.allLayers[s.zone] || []).forEach(({ layer }) => map.removeLayer(layer));
+    s.allLayers[s.zone] = [];
+    clearTemp();
+    showMsg("🗑 נוקה");
+  }
+
+  function selectZone(zoneId) {
+    clearTemp();
+    stateRef.current.zone = zoneId;
+    setActiveZone(zoneId);
+    const z = ZONES.find(z => z.id === zoneId);
+    leafRef.current?.flyTo([z.lat, z.lng], 13, { duration: 0.7 });
+  }
+
+  function selectTool(toolId) {
+    clearTemp();
+    stateRef.current.tool = toolId;
+    setActiveTool(toolId);
+  }
+
+  async function saveZone() {
+    const s = stateRef.current;
+    if (!s.zone) { showMsg("בחר אזור!", "error"); return; }
+    const layers = s.allLayers[s.zone] || [];
+    if (!layers.length) { showMsg("אין צורות לשמירה!", "error"); return; }
+
     setSaving(true);
+    try {
+      // collect all polygons as arrays of [lat,lng]
+      const polygons = layers.map(({ type, points }) => {
+        if (type === "polygon") return points;
+        if (type === "circle") {
+          // approximate circle as polygon
+          const [center, radius] = points;
+          const pts = [];
+          const L = window.L;
+          const map = leafRef.current;
+          for (let i = 0; i < 32; i++) {
+            const angle = (i / 32) * 2 * Math.PI;
+            const pt = L.latLng(center).toBounds
+              ? null
+              : [
+                  center[0] + (radius / 111320) * Math.cos(angle),
+                  center[1] + (radius / (111320 * Math.cos(center[0] * Math.PI / 180))) * Math.sin(angle),
+                ];
+            if (pt) pts.push(pt);
+          }
+          return pts.length ? pts : points;
+        }
+        return points;
+      });
 
-    const { error } = await supabase
-      .from("delivery_zones")
-      .update({ polygon: pointsRef.current })
-      .eq("id", selected.id);
+      const z = ZONES.find(z => z.id === s.zone);
+      await supabase.from("delivery_zones").upsert({
+        id: s.zone,
+        name: z.name,
+        center_lat: z.lat,
+        center_lng: z.lng,
+        polygon: polygons,
+        is_active: true,
+      });
 
-    setSaving(false);
-    if (error) {
-      setMsg("❌ خطأ في الحفظ: " + error.message);
-    } else {
-      setMsg(`✅ تم حفظ منطقة "${selected.name}" بنجاح!`);
-      setDrawing(false);
-      setZones(prev => prev.map(z =>
-        z.id === selected.id ? { ...z, polygon: pointsRef.current } : z
-      ));
+      setSaved(prev => ({ ...prev, [s.zone]: true }));
+      showMsg("✅ נשמר בהצלחה!");
+    } catch(e) {
+      showMsg("שגיאה בשמירה", "error");
     }
+    setSaving(false);
   }
+
+  const zoneColor = ZONES.find(z => z.id === activeZone)?.color || RED;
 
   return (
-    <div style={{ position: "fixed", inset: 0, fontFamily: "Arial,sans-serif", direction: "rtl", background: "#f5f5f5" }}>
+    <div style={{ position:"fixed", inset:0, fontFamily:"'Segoe UI',Arial,sans-serif", direction:"rtl", background:DARK }}>
       <style>{`
-        @keyframes spin { to { transform:rotate(360deg); } }
-        .leaflet-container { background:#e8e0d8 !important; }
-        .zone-btn { padding:10px 14px;border:1.5px solid #E5E7EB;border-radius:12px;
-          background:white;cursor:pointer;font-size:13px;font-weight:700;text-align:right; }
-        .zone-btn:hover { border-color:${C.red};color:${C.red}; }
-        .zone-btn.active { background:${C.red};color:white;border-color:${C.red}; }
-        .zone-btn.has-poly { border-color:#86efac; }
-        .mBtn:active { transform:scale(0.92); }
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+        .leaflet-container{background:#1e293b!important}
+        .zBtn{transition:all 0.2s;cursor:pointer;border:none;outline:none;}
+        .zBtn:active{transform:scale(0.93);}
+        .tBtn{transition:all 0.18s;cursor:pointer;border:none;outline:none;}
+        .tBtn:hover{filter:brightness(1.15);}
+        .tBtn:active{transform:scale(0.9);}
+        input[type=range]{accent-color:${zoneColor};}
       `}</style>
 
-      {/* Header */}
+      {/* ─── Top Bar ─── */}
       <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, zIndex: 1000,
-        background: "white", boxShadow: "0 1px 0 rgba(0,0,0,0.08)",
-        padding: "12px 16px", display: "flex", alignItems: "center", gap: 10,
+        position:"absolute",top:0,left:0,right:0,zIndex:1000,
+        background:"rgba(15,23,42,0.97)",backdropFilter:"blur(12px)",
+        borderBottom:"1px solid rgba(255,255,255,0.08)",
+        padding:"10px 14px",display:"flex",alignItems:"center",gap:10,
       }}>
-        <div style={{ fontSize: 20 }}>🗺️</div>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 900, color: C.dark }}>ניהול אזורי משלוח</div>
-          <div style={{ fontSize: 11, color: C.gray }}>בחר אזור ושרטט את הגבול על המפה</div>
+        <button className="zBtn" onClick={()=>navigate(-1)} style={{
+          background:"rgba(255,255,255,0.07)",borderRadius:10,
+          width:36,height:36,color:"white",fontSize:18,flexShrink:0,
+          display:"flex",alignItems:"center",justifyContent:"center",
+        }}>‹</button>
+
+        <div style={{flex:1}}>
+          <div style={{color:"white",fontWeight:800,fontSize:15}}>🗺️ ניהול מפות אזורים</div>
+          {activeZone && (
+            <div style={{fontSize:11,color:zoneColor,fontWeight:700,animation:"pulse 2s infinite"}}>
+              ● {ZONES.find(z=>z.id===activeZone)?.name}
+            </div>
+          )}
         </div>
+
+        {/* Save */}
+        <button className="zBtn" onClick={saveZone} disabled={saving} style={{
+          background:saving?"#374151":`linear-gradient(135deg,${zoneColor},${zoneColor}cc)`,
+          borderRadius:12,padding:"8px 16px",color:"white",
+          fontSize:13,fontWeight:800,
+          boxShadow:saving?"none":`0 3px 14px ${zoneColor}55`,
+        }}>
+          {saving ? "⏳" : "💾 שמור"}
+        </button>
       </div>
 
-      {/* Zone selector */}
+      {/* ─── Zone Selector ─── */}
       <div style={{
-        position: "absolute", top: 58, left: 0, right: 0, zIndex: 900,
-        background: "white", borderBottom: "1px solid #E5E7EB",
-        padding: "8px 12px",
-        display: "flex", gap: 8, overflowX: "auto",
+        position:"absolute",top:57,left:0,right:0,zIndex:900,
+        background:"rgba(15,23,42,0.92)",backdropFilter:"blur(8px)",
+        borderBottom:"1px solid rgba(255,255,255,0.06)",
+        padding:"8px 10px",display:"flex",gap:6,overflowX:"auto",
       }}>
-        {zones.map(z => (
-          <button key={z.id}
-            className={`zone-btn${selected?.id === z.id ? " active" : ""}${z.polygon?.length > 2 ? " has-poly" : ""}`}
-            onClick={() => startDraw(z)}>
-            {z.emoji} {z.name.split(" - ")[0]}
-            {z.polygon?.length > 2 ? " ✓" : " ○"}
+        {ZONES.map(z => {
+          const isActive = activeZone === z.id;
+          return (
+            <button key={z.id} className="zBtn" onClick={()=>selectZone(z.id)} style={{
+              flexShrink:0,
+              background:isActive?z.color:"rgba(255,255,255,0.06)",
+              border:`1.5px solid ${isActive?z.color:"rgba(255,255,255,0.1)"}`,
+              borderRadius:20,padding:"5px 12px",
+              color:"white",fontSize:11,fontWeight:isActive?800:500,
+              display:"flex",alignItems:"center",gap:5,
+            }}>
+              <span style={{fontSize:9,opacity:0.8}}>{saved[z.id]?"✓":"○"}</span>
+              {z.name.split(" - ")[0]}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ─── Map ─── */}
+      <div ref={mapRef} style={{
+        position:"absolute",top:108,left:0,right:0,bottom:180,
+      }}/>
+
+      {/* ─── Drawing Hint ─── */}
+      {activeZone && (
+        <div style={{
+          position:"absolute",top:120,left:"50%",transform:"translateX(-50%)",
+          zIndex:800,background:"rgba(15,23,42,0.85)",backdropFilter:"blur(8px)",
+          border:`1px solid ${zoneColor}44`,borderRadius:20,
+          padding:"5px 14px",color:"white",fontSize:11,fontWeight:700,
+          pointerEvents:"none",whiteSpace:"nowrap",
+        }}>
+          {activeTool==="polygon" && pointCount===0 && "לחץ על המפה להוספת נקודות"}
+          {activeTool==="polygon" && pointCount>0 && `${pointCount} נקודות • לחץ פעמיים לסיום`}
+          {activeTool==="circle"  && "לחץ מרכז → לחץ קצה לרדיוס"}
+          {activeTool==="rect"    && "לחץ פינה ראשונה → לחץ פינה שנייה"}
+        </div>
+      )}
+
+      {/* ─── Zoom Buttons ─── */}
+      <div style={{
+        position:"absolute",left:12,top:"45%",transform:"translateY(-50%)",
+        zIndex:800,display:"flex",flexDirection:"column",gap:5,
+      }}>
+        {[["+",1],["-",-1]].map(([l,d])=>(
+          <button key={l} className="zBtn" onClick={()=>leafRef.current?.setZoom((leafRef.current.getZoom()||11)+d)}
+            style={{background:"rgba(15,23,42,0.9)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,width:34,height:34,color:"white",fontSize:18,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {l}
           </button>
         ))}
       </div>
 
-      {/* Map */}
-      <div ref={mapRef} style={{
-        position: "absolute", top: 112, left: 0, right: 0, bottom: 0,
-      }} />
+      {/* ─── Bottom Panel ─── */}
+      <div style={{
+        position:"absolute",bottom:0,left:0,right:0,zIndex:1000,
+        background:"rgba(15,23,42,0.97)",backdropFilter:"blur(12px)",
+        borderTop:"1px solid rgba(255,255,255,0.08)",
+        padding:"12px 14px 16px",
+      }}>
+
+        {/* Tools */}
+        <div style={{display:"flex",gap:6,marginBottom:12,justifyContent:"center"}}>
+          {TOOLS.filter(t=>t.id!=="edit").map(t=>{
+            const isActive = activeTool===t.id;
+            return (
+              <button key={t.id} className="tBtn" onClick={()=>selectTool(t.id)} style={{
+                flex:1,background:isActive?`linear-gradient(135deg,${zoneColor},${zoneColor}bb)`:"rgba(255,255,255,0.06)",
+                border:`1.5px solid ${isActive?zoneColor:"rgba(255,255,255,0.1)"}`,
+                borderRadius:14,padding:"8px 4px",
+                color:"white",
+                display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+                boxShadow:isActive?`0 3px 12px ${zoneColor}44`:"none",
+              }}>
+                <span style={{fontSize:18}}>{t.icon}</span>
+                <span style={{fontSize:9,fontWeight:700,opacity:isActive?1:0.6}}>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sliders */}
+        <div style={{display:"flex",gap:14,marginBottom:10,alignItems:"center"}}>
+          <div style={{flex:1}}>
+            <div style={{color:"rgba(255,255,255,0.5)",fontSize:10,marginBottom:3}}>שקיפות מילוי</div>
+            <input type="range" min="0" max="0.6" step="0.05" value={opacity}
+              onChange={e=>setOpacity(+e.target.value)}
+              style={{width:"100%",height:4}}/>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{color:"rgba(255,255,255,0.5)",fontSize:10,marginBottom:3}}>עובי קו</div>
+            <input type="range" min="1" max="6" step="0.5" value={strokeW}
+              onChange={e=>setStrokeW(+e.target.value)}
+              style={{width:"100%",height:4}}/>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{display:"flex",gap:6}}>
+          <button className="tBtn" onClick={undoLast} style={{
+            flex:1,background:"rgba(245,158,11,0.15)",border:"1px solid rgba(245,158,11,0.3)",
+            borderRadius:12,padding:"9px",color:"#fbbf24",fontSize:12,fontWeight:700,
+          }}>↩ ביטול</button>
+          <button className="tBtn" onClick={clearZone} style={{
+            flex:1,background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.3)",
+            borderRadius:12,padding:"9px",color:"#f87171",fontSize:12,fontWeight:700,
+          }}>🗑 נקה הכל</button>
+          <button className="tBtn" onClick={finishPolygon} disabled={activeTool!=="polygon"} style={{
+            flex:1,
+            background:activeTool==="polygon"?"rgba(34,197,94,0.15)":"rgba(255,255,255,0.04)",
+            border:`1px solid ${activeTool==="polygon"?"rgba(34,197,94,0.4)":"rgba(255,255,255,0.08)"}`,
+            borderRadius:12,padding:"9px",
+            color:activeTool==="polygon"?"#4ade80":"rgba(255,255,255,0.2)",
+            fontSize:12,fontWeight:700,
+          }}>✓ סיים</button>
+        </div>
+      </div>
+
+      {/* ─── Toast ─── */}
+      {msg && (
+        <div style={{
+          position:"absolute",top:115,left:"50%",transform:"translateX(-50%)",
+          zIndex:2000,background:msg.type==="error"?"#7f1d1d":"#14532d",
+          border:`1px solid ${msg.type==="error"?"#dc2626":"#16a34a"}`,
+          borderRadius:16,padding:"8px 18px",color:"white",
+          fontSize:13,fontWeight:700,whiteSpace:"nowrap",
+          animation:"fadeIn 0.25s ease",boxShadow:"0 4px 20px rgba(0,0,0,0.4)",
+        }}>{msg.text}</div>
+      )}
 
       {/* Loading */}
       {!ready && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 600, background: "white",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: "50%",
-            border: "3px solid rgba(200,16,46,0.15)",
-            borderTopColor: C.red, animation: "spin 0.8s linear infinite",
-          }} />
-        </div>
-      )}
-
-      {/* Controls */}
-      {selected && (
-        <div style={{
-          position: "absolute", bottom: 24, left: 12, right: 12, zIndex: 1000,
-          background: "white", borderRadius: 18,
-          padding: "14px 16px",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
-        }}>
-          {msg && (
-            <div style={{
-              fontSize: 12, marginBottom: 10, fontWeight: 700,
-              color: msg.startsWith("✅") ? C.green : msg.startsWith("❌") ? C.red : C.dark,
-            }}>{msg}</div>
-          )}
-
-          <div style={{ fontSize: 13, fontWeight: 900, marginBottom: 10, color: C.dark }}>
-            {selected.emoji} {selected.name}
-            {points.length > 0 && <span style={{ color: C.gray, fontWeight: 400 }}> — {points.length} נקודות</span>}
-          </div>
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="mBtn" onClick={undoLast} style={{
-              flex: 1, padding: "10px", border: "1.5px solid #E5E7EB",
-              borderRadius: 12, background: "white", cursor: "pointer",
-              fontSize: 13, fontWeight: 700, color: C.dark,
-            }}>↩ ביטול</button>
-
-            <button className="mBtn" onClick={clearDraw} style={{
-              flex: 1, padding: "10px", border: "1.5px solid #E5E7EB",
-              borderRadius: 12, background: "white", cursor: "pointer",
-              fontSize: 13, fontWeight: 700, color: C.red,
-            }}>🗑 נקה</button>
-
-            <button className="mBtn" onClick={savePolygon}
-              disabled={saving || points.length < 3}
-              style={{
-                flex: 2, padding: "10px",
-                background: points.length < 3 ? "#D1D5DB" : `linear-gradient(135deg,${C.red},#a00020)`,
-                border: "none", borderRadius: 12, cursor: points.length < 3 ? "not-allowed" : "pointer",
-                fontSize: 13, fontWeight: 900, color: "white",
-                boxShadow: points.length < 3 ? "none" : "0 4px 14px rgba(200,16,46,0.35)",
-              }}>
-              {saving ? "⏳ שומר..." : "💾 שמור אזור"}
-            </button>
-          </div>
-
-          {drawing && (
-            <div style={{
-              marginTop: 10, padding: "8px 12px",
-              background: "rgba(200,16,46,0.06)", borderRadius: 10,
-              fontSize: 12, color: C.red, fontWeight: 700, textAlign: "center",
-            }}>
-              🖊️ לחץ על המפה להוספת נקודות • לחץ פעמיים לסיום
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Instructions when no zone selected */}
-      {!selected && ready && (
-        <div style={{
-          position: "absolute", bottom: 24, left: 12, right: 12, zIndex: 1000,
-          background: "white", borderRadius: 18, padding: "16px",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
-          textAlign: "center",
-        }}>
-          <div style={{ fontSize: 28, marginBottom: 8 }}>👆</div>
-          <div style={{ fontSize: 14, fontWeight: 900, color: C.dark, marginBottom: 4 }}>
-            בחר אזור למעלה
-          </div>
-          <div style={{ fontSize: 12, color: C.gray }}>
-            לחץ על כפתור האזור ואז שרטט את הגבול על המפה
-          </div>
+        <div style={{position:"absolute",inset:0,zIndex:3000,background:DARK,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{width:40,height:40,borderRadius:"50%",border:"3px solid rgba(200,16,46,0.2)",borderTopColor:RED,animation:"spin 0.8s linear infinite"}}/>
         </div>
       )}
     </div>
