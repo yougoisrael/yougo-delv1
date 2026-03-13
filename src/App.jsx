@@ -176,7 +176,8 @@ export default function App() {
       <Route path="/cart" element={
         <CartPage cart={cart} add={addToCart} rem={removeFromCart}
           setCart={setCart} cartCount={cartCount} user={user}
-          guest={!authed} onLogin={() => {}}/>
+          guest={!authed} selectedArea={selectedArea}
+          onLogin={(u) => { if(u){setUser(u);setAuthed(true);} }}/>
       }/>
       <Route path="/orders" element={
         <OrdersPage cartCount={cartCount} user={user} guest={!authed} onLogin={() => {}}/>
@@ -199,18 +200,7 @@ export default function App() {
       <Route path="/cards"    element={<CardsPage guest={!authed} onLogin={() => {}}/>}/>
       <Route path="/invite"   element={<InvitePage user={user} guest={!authed} onLogin={() => {}}/>}/>
       <Route path="/support"  element={<SupportPage user={user}/>}/>
-      <Route path="/address"  element={
-        <AddressPickerPage
-          cartCount={cartCount}
-          initialZone={selectedArea}
-          onAddressSave={(a) => {
-            const area = a.zone || a;
-            const norm = { id:area?.id||selectedArea?.id, short:area?.short||area?.nameHe||selectedArea?.short||"", name:area?.name||area?.nameHe||selectedArea?.name||"", lat:area?.lat||selectedArea?.lat, lng:area?.lng||selectedArea?.lng, radius:area?.radius||selectedArea?.radius };
-            handleAreaSelect(norm);
-            try { localStorage.setItem("yougo_address", JSON.stringify(a)); } catch {}
-          }}
-        />
-      }/>
+      <Route path="/address"  element={<AddressPickerPage onAddressSave={handleAreaSelect} user={user} guest={!authed}/>}/>
       <Route path="/business" element={<BusinessPortal onBack={() => window.history.back()}/>}/>
       <Route path="/admin/zones" element={<AdminZonesPage/>}/>
       <Route path="/admin" element={
