@@ -294,17 +294,15 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
   const [loading,    setLoading]    = useState(false);
   const [ordered,    setOrdered]    = useState(false);
   const [orderId,    setOrderId]    = useState(null);
-  const [showPhone,  setShowPhone]  = useState(false);  // phone login modal
+  const [showPhone,  setShowPhone]  = useState(false);
   const [showLocPicker, setShowLocPicker] = useState(false);
-  const [deliveryLoc,   setDeliveryLoc]   = useState(null);  // chosen location
+  const [deliveryLoc,   setDeliveryLoc]   = useState(null);
   const [savedLocs,     setSavedLocs]     = useState([]);
 
-  // Load saved locations
   useEffect(() => {
     try { setSavedLocs(JSON.parse(localStorage.getItem("yougo_saved_locations") || "[]")); } catch {}
   }, []);
 
-  // Auto-set delivery to saved area if exists
   useEffect(() => {
     if (selectedArea && !deliveryLoc) {
       setDeliveryLoc({ label: selectedArea.short, address: selectedArea.short, isMe: true, zone: selectedArea });
@@ -324,15 +322,13 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
   }
 
   async function placeOrder() {
-    /* Guest → show phone modal, continue after login */
-    if (!user?.id) { setShowPhone(true); return; }
     if (!deliveryLoc) { setShowLocPicker(true); return; }
     setLoading(true);
     try {
       const { data, error } = await supabase.from("orders").insert({
-        user_id: user.id,
-        customer_name: user.name || user.firstName || "",
-        customer_phone: user.phone || "",
+        user_id: user?.id || null,
+        customer_name: user?.name || user?.firstName || "",
+        customer_phone: user?.phone || "",
         restaurant_name: restaurantName,
         items: cart,
         subtotal, delivery_fee: deliveryFee, total,
@@ -396,7 +392,7 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
 
       <div style={{ padding:"0 16px" }}>
 
-        {/* Cart items */}
+        {/* ── Cart items — always visible (guest + logged-in) ── */}
         <div style={{ marginBottom:14 }}>
           {cart.map(item=>(
             <div key={`${item.id}-${item.rid}`} style={{ background:"white",borderRadius:16,padding:14,marginBottom:10,boxShadow:"0 2px 8px rgba(0,0,0,.06)",display:"flex",gap:12,alignItems:"center" }}>
@@ -418,92 +414,117 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
           ))}
         </div>
 
-        {/* Delivery address picker */}
-        <div style={{ background:"white",borderRadius:16,padding:16,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
-          <div style={{ fontSize:13,fontWeight:700,color:C.dark,marginBottom:10,display:"flex",alignItems:"center",gap:6 }}>
-            <IcoPin s={14} c={RED}/> כתובת למשלוח
-          </div>
-          {deliveryLoc ? (
-            <div style={{ display:"flex",alignItems:"center",gap:12,background:"rgba(200,16,46,.04)",borderRadius:12,padding:"11px 13px",border:"1.5px solid rgba(200,16,46,.15)" }}>
-              <div style={{ fontSize:22,flexShrink:0 }}>{deliveryLoc.typeEmoji||deliveryLoc.emoji||"📍"}</div>
-              <div style={{ flex:1,minWidth:0 }}>
-                <div style={{ fontSize:13,fontWeight:800,color:DARK }}>{deliveryLoc.label}</div>
-                <div style={{ fontSize:11,color:GRAY,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{deliveryLoc.address}</div>
-                {deliveryLoc.otherPhone && <div style={{ fontSize:11,color:"#059669",marginTop:1 }}>📞 {deliveryLoc.otherPhone}</div>}
-              </div>
-              <button onClick={()=>setShowLocPicker(true)} style={{ background:"none",border:"none",cursor:"pointer",color:RED,fontSize:12,fontWeight:700,flexShrink:0 }}>שנה</button>
+        {/* ── Guest banner — login to complete order ── */}
+        {guest && (
+          <div style={{ background:"linear-gradient(135deg,#1E293B,#0F172A)",borderRadius:20,padding:"20px 18px",marginBottom:16,textAlign:"center" }}>
+            <div style={{ fontSize:32,marginBottom:8 }}>🔐</div>
+            <div style={{ color:"white",fontSize:16,fontWeight:900,marginBottom:4 }}>כניסה נדרשת להמשך</div>
+            <div style={{ color:"rgba(255,255,255,.6)",fontSize:12,marginBottom:16,lineHeight:1.5 }}>
+              המוצרים שמורים בעגלה.<br/>התחבר/י כדי לבצע הזמנה ולשלם.
             </div>
-          ) : (
-            <button onClick={()=>setShowLocPicker(true)} style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"13px 14px",borderRadius:12,border:"2px dashed #E5E7EB",background:"#F9FAFB",cursor:"pointer",fontFamily:"inherit" }}>
-              <div style={{ width:36,height:36,borderRadius:10,background:"rgba(200,16,46,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>📍</div>
-              <span style={{ fontSize:13,fontWeight:700,color:RED }}>בחר כתובת למשלוח</span>
+            <button onClick={()=>setShowPhone(true)} style={{ background:`linear-gradient(135deg,${RED},#9B0B22)`,color:"white",border:"none",borderRadius:14,padding:"13px 28px",fontSize:14,fontWeight:900,cursor:"pointer",boxShadow:"0 5px 18px rgba(200,16,46,.40)" }}>
+              התחבר/י עכשיו →
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Promo */}
-        <div style={{ background:"white",borderRadius:16,padding:16,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
-          <div style={{ fontSize:13,fontWeight:700,color:C.dark,marginBottom:8 }}>🎟️ קוד פרומו</div>
-          {promo ? (
-            <div style={{ display:"flex",alignItems:"center",gap:8,background:"rgba(16,185,129,.08)",borderRadius:12,padding:"10px 14px" }}>
-              <IcoCheck s={16} c={C.green}/>
-              <span style={{ color:C.green,fontWeight:700,fontSize:14 }}>{promo} — {PROMO_CODES[promo]*100}% הנחה</span>
-              <button onClick={()=>{setPromo(null);setPromoInput("");}} style={{ marginRight:"auto",background:"none",border:"none",cursor:"pointer" }}><IcoClose s={13} c={C.gray}/></button>
-            </div>
-          ) : (
-            <div style={{ display:"flex",gap:8 }}>
-              <input className="cp-inp" value={promoInput} onChange={e=>{setPromoInput(e.target.value);setPromoError("");}}
-                onKeyDown={e=>{if(e.key==="Enter")applyPromo();}}
-                placeholder="הזן קוד (כגון: NAAT10)"
-                style={{ flex:1,border:"1.5px solid #E5E7EB",borderRadius:12,padding:"10px 12px",fontSize:13,outline:"none",direction:"rtl",fontFamily:"inherit" }}/>
-              <button onClick={applyPromo} style={{ background:C.dark,color:"white",border:"none",borderRadius:12,padding:"10px 16px",fontSize:13,fontWeight:700,cursor:"pointer" }}>אשר</button>
-            </div>
-          )}
-          {promoError && <div style={{ color:C.red,fontSize:11,marginTop:5 }}>{promoError}</div>}
-        </div>
+        {/* ── Delivery + Promo + Payment + Summary — only for logged-in ── */}
+        {!guest && (<>
 
-        {/* Payment */}
-        <div style={{ background:"white",borderRadius:16,padding:16,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
-          <div style={{ fontSize:13,fontWeight:700,color:C.dark,marginBottom:10 }}>אמצעי תשלום</div>
-          <div style={{ display:"flex",gap:7 }}>
-            {[{v:"cash",l:"מזומן",Ico:IcoCash},{v:"card",l:"אשראי",Ico:IcoCreditCard},{v:"paypal",l:"PayPal",e:"🅿️"},{v:"googlepay",l:"Google",e:"G"},{v:"applepay",l:"Apple Pay",e:"🍎"}].map(p=>(
-              <button key={p.v} onClick={()=>setPayment(p.v)} style={{ flex:1,padding:"10px 4px",borderRadius:12,border:`2px solid ${payment===p.v?RED:"#E5E7EB"}`,background:payment===p.v?"rgba(200,16,46,.06)":"white",cursor:"pointer",fontSize:11,fontWeight:payment===p.v?700:500,color:payment===p.v?RED:GRAY,display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontFamily:"inherit",transition:"all .15s" }}>
-                {p.Ico?<p.Ico s={20} c={payment===p.v?RED:GRAY}/>:<span style={{fontSize:16}}>{p.e}</span>}{p.l}
+          {/* Delivery address picker */}
+          <div style={{ background:"white",borderRadius:16,padding:16,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
+            <div style={{ fontSize:13,fontWeight:700,color:C.dark,marginBottom:10,display:"flex",alignItems:"center",gap:6 }}>
+              <IcoPin s={14} c={RED}/> כתובת למשלוח
+            </div>
+            {deliveryLoc ? (
+              <div style={{ display:"flex",alignItems:"center",gap:12,background:"rgba(200,16,46,.04)",borderRadius:12,padding:"11px 13px",border:"1.5px solid rgba(200,16,46,.15)" }}>
+                <div style={{ fontSize:22,flexShrink:0 }}>{deliveryLoc.typeEmoji||deliveryLoc.emoji||"📍"}</div>
+                <div style={{ flex:1,minWidth:0 }}>
+                  <div style={{ fontSize:13,fontWeight:800,color:DARK }}>{deliveryLoc.label}</div>
+                  <div style={{ fontSize:11,color:GRAY,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{deliveryLoc.address}</div>
+                  {deliveryLoc.otherPhone && <div style={{ fontSize:11,color:"#059669",marginTop:1 }}>📞 {deliveryLoc.otherPhone}</div>}
+                </div>
+                <button onClick={()=>setShowLocPicker(true)} style={{ background:"none",border:"none",cursor:"pointer",color:RED,fontSize:12,fontWeight:700,flexShrink:0 }}>שנה</button>
+              </div>
+            ) : (
+              <button onClick={()=>setShowLocPicker(true)} style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"13px 14px",borderRadius:12,border:"2px dashed #E5E7EB",background:"#F9FAFB",cursor:"pointer",fontFamily:"inherit" }}>
+                <div style={{ width:36,height:36,borderRadius:10,background:"rgba(200,16,46,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>📍</div>
+                <span style={{ fontSize:13,fontWeight:700,color:RED }}>בחר כתובת למשלוח</span>
               </button>
-            ))}
+            )}
           </div>
-        </div>
 
-        {/* Summary */}
-        <div style={{ background:"white",borderRadius:16,padding:16,marginBottom:14,boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
-          <div style={{ fontSize:13,fontWeight:700,color:C.dark,marginBottom:10 }}>סיכום הזמנה</div>
-          {[
-            { l:"סכום ביניים", v:`₪${subtotal}` },
-            { l:"משלוח",       v:deliveryFee===0?"חינם 🎉":`₪${deliveryFee}` },
-            ...(promo?[{l:`הנחה (${promo})`,v:`-₪${discount}`,c:C.green}]:[]),
-          ].map((r,i)=>(
-            <div key={i} style={{ display:"flex",justifyContent:"space-between",marginBottom:7 }}>
-              <span style={{ fontSize:13,color:C.gray }}>{r.l}</span>
-              <span style={{ fontSize:13,fontWeight:600,color:r.c||C.dark }}>{r.v}</span>
-            </div>
-          ))}
-          <div style={{ borderTop:"1.5px solid #E5E7EB",paddingTop:10,display:"flex",justifyContent:"space-between" }}>
-            <span style={{ fontSize:15,fontWeight:800,color:C.dark }}>סה״כ</span>
-            <span style={{ fontSize:18,fontWeight:900,color:C.red }}>₪{total}</span>
+          {/* Promo */}
+          <div style={{ background:"white",borderRadius:16,padding:16,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
+            <div style={{ fontSize:13,fontWeight:700,color:C.dark,marginBottom:8 }}>🎟️ קוד פרומו</div>
+            {promo ? (
+              <div style={{ display:"flex",alignItems:"center",gap:8,background:"rgba(16,185,129,.08)",borderRadius:12,padding:"10px 14px" }}>
+                <IcoCheck s={16} c={C.green}/>
+                <span style={{ color:C.green,fontWeight:700,fontSize:14 }}>{promo} — {PROMO_CODES[promo]*100}% הנחה</span>
+                <button onClick={()=>{setPromo(null);setPromoInput("");}} style={{ marginRight:"auto",background:"none",border:"none",cursor:"pointer" }}><IcoClose s={13} c={C.gray}/></button>
+              </div>
+            ) : (
+              <div style={{ display:"flex",gap:8 }}>
+                <input className="cp-inp" value={promoInput} onChange={e=>{setPromoInput(e.target.value);setPromoError("");}}
+                  onKeyDown={e=>{if(e.key==="Enter")applyPromo();}}
+                  placeholder="הזן קוד (כגון: NAAT10)"
+                  style={{ flex:1,border:"1.5px solid #E5E7EB",borderRadius:12,padding:"10px 12px",fontSize:13,outline:"none",direction:"rtl",fontFamily:"inherit" }}/>
+                <button onClick={applyPromo} style={{ background:C.dark,color:"white",border:"none",borderRadius:12,padding:"10px 16px",fontSize:13,fontWeight:700,cursor:"pointer" }}>אשר</button>
+              </div>
+            )}
+            {promoError && <div style={{ color:C.red,fontSize:11,marginTop:5 }}>{promoError}</div>}
           </div>
-          {subtotal<FREE_DELIVERY_MIN&&<div style={{ marginTop:8,background:"rgba(245,166,35,.1)",borderRadius:10,padding:"8px 12px",fontSize:12,color:C.gold||"#B45309",fontWeight:600,textAlign:"center" }}>הוסף עוד ₪{FREE_DELIVERY_MIN-subtotal} לקבלת משלוח חינם!</div>}
-        </div>
+
+          {/* Payment */}
+          <div style={{ background:"white",borderRadius:16,padding:16,marginBottom:12,boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
+            <div style={{ fontSize:13,fontWeight:700,color:C.dark,marginBottom:10 }}>אמצעי תשלום</div>
+            <div style={{ display:"flex",gap:7 }}>
+              {[{v:"cash",l:"מזומן",Ico:IcoCash},{v:"card",l:"אשראי",Ico:IcoCreditCard},{v:"paypal",l:"PayPal",e:"🅿️"},{v:"googlepay",l:"Google",e:"G"},{v:"applepay",l:"Apple Pay",e:"🍎"}].map(p=>(
+                <button key={p.v} onClick={()=>setPayment(p.v)} style={{ flex:1,padding:"10px 4px",borderRadius:12,border:`2px solid ${payment===p.v?RED:"#E5E7EB"}`,background:payment===p.v?"rgba(200,16,46,.06)":"white",cursor:"pointer",fontSize:11,fontWeight:payment===p.v?700:500,color:payment===p.v?RED:GRAY,display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontFamily:"inherit",transition:"all .15s" }}>
+                  {p.Ico?<p.Ico s={20} c={payment===p.v?RED:GRAY}/>:<span style={{fontSize:16}}>{p.e}</span>}{p.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div style={{ background:"white",borderRadius:16,padding:16,marginBottom:14,boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
+            <div style={{ fontSize:13,fontWeight:700,color:C.dark,marginBottom:10 }}>סיכום הזמנה</div>
+            {[
+              { l:"סכום ביניים", v:`₪${subtotal}` },
+              { l:"משלוח",       v:deliveryFee===0?"חינם 🎉":`₪${deliveryFee}` },
+              ...(promo?[{l:`הנחה (${promo})`,v:`-₪${discount}`,c:C.green}]:[]),
+            ].map((r,i)=>(
+              <div key={i} style={{ display:"flex",justifyContent:"space-between",marginBottom:7 }}>
+                <span style={{ fontSize:13,color:C.gray }}>{r.l}</span>
+                <span style={{ fontSize:13,fontWeight:600,color:r.c||C.dark }}>{r.v}</span>
+              </div>
+            ))}
+            <div style={{ borderTop:"1.5px solid #E5E7EB",paddingTop:10,display:"flex",justifyContent:"space-between" }}>
+              <span style={{ fontSize:15,fontWeight:800,color:C.dark }}>סה״כ</span>
+              <span style={{ fontSize:18,fontWeight:900,color:C.red }}>₪{total}</span>
+            </div>
+            {subtotal<FREE_DELIVERY_MIN&&<div style={{ marginTop:8,background:"rgba(245,166,35,.1)",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#B45309",fontWeight:600,textAlign:"center" }}>הוסף עוד ₪{FREE_DELIVERY_MIN-subtotal} לקבלת משלוח חינם!</div>}
+          </div>
+
+        </>)}
       </div>
 
-      {/* Fixed checkout button */}
+      {/* Fixed bottom bar */}
       <div style={{ position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,padding:"10px 16px 20px",background:"white",borderTop:"1px solid #F0F0F0",boxShadow:"0 -4px 20px rgba(0,0,0,.06)",zIndex:50 }}>
-        <div style={{ display:"flex",alignItems:"center",gap:6,justifyContent:"center",marginBottom:8 }}>
-          <IcoShield s={13} c={GRAY}/>
-          <span style={{ fontSize:11,color:GRAY }}>תשלום מאובטח ומוצפן</span>
+        <div style={{ display:"flex",alignItems:"center",gap:6,justifyContent:"center",marginBottom:8,background:"#F0FDF4",borderRadius:10,padding:"7px 14px",border:"1px solid #BBF7D0" }}>
+          <IcoShield s={14} c="#16A34A"/>
+          <span style={{ fontSize:12,color:"#15803D",fontWeight:700 }}>תשלום מאובטח ומוצפן 🔒</span>
         </div>
-        <button onClick={placeOrder} disabled={loading} style={{ width:"100%",background:loading?"rgba(200,16,46,.5)":`linear-gradient(135deg,${RED},#9B0B22)`,color:"white",border:"none",borderRadius:16,padding:"16px",fontSize:16,fontWeight:900,cursor:loading?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 6px 20px rgba(200,16,46,.35)" }}>
-          {loading?<><Spinner/>מעבד הזמנה...</>:<>עבור לדף התשלום — ₪{total}</>}
-        </button>
+        {guest ? (
+          <button onClick={()=>setShowPhone(true)} style={{ width:"100%",background:`linear-gradient(135deg,${RED},#9B0B22)`,color:"white",border:"none",borderRadius:16,padding:"16px",fontSize:16,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 6px 20px rgba(200,16,46,.35)" }}>
+            🔐 התחבר/י להמשך הזמנה
+          </button>
+        ) : (
+          <button onClick={placeOrder} disabled={loading} style={{ width:"100%",background:loading?"rgba(200,16,46,.5)":`linear-gradient(135deg,${RED},#9B0B22)`,color:"white",border:"none",borderRadius:16,padding:"16px",fontSize:16,fontWeight:900,cursor:loading?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 6px 20px rgba(200,16,46,.35)" }}>
+            {loading?<><Spinner/>מעבד הזמנה...</>:<>עבור לתשלום — ₪{total}</>}
+          </button>
+        )}
       </div>
 
       {/* Phone login modal */}
