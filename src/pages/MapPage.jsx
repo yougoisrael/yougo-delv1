@@ -5,29 +5,43 @@ import BottomNav from "../components/BottomNav";
 const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280" };
 
 const AREAS = [
-  { id: "rame",     name: "ראמה",          lat: 32.9367, lng: 35.3647 },
-  { id: "sagor",    name: "סאגור",         lat: 32.9261, lng: 35.3431 },
-  { id: "magar",    name: "מגאר",          lat: 32.9272, lng: 35.4025 },
-  { id: "einasad",  name: "עין אל-אסד",    lat: 32.9503, lng: 35.3311 },
-  { id: "peki",     name: "פקיעין",        lat: 32.9797, lng: 35.3208 },
-  { id: "ksara",    name: "כסרא-סמיע",     lat: 33.0114, lng: 35.3508 },
-  { id: "horfesh",  name: "חורפיש",        lat: 33.0000, lng: 35.3167 },
-  { id: "yanuh",    name: "יאנוח-ג'ת",     lat: 32.9633, lng: 35.2975 },
-  { id: "karmiel",  name: "כרמיאל",        lat: 32.9147, lng: 35.2969 },
-  { id: "nahef",    name: "נחף",           lat: 32.9408, lng: 35.3194 },
-  { id: "majd",     name: "מגד אל-כרום",   lat: 32.9314, lng: 35.2592 },
-  { id: "baane",    name: "בעינה",         lat: 32.8956, lng: 35.3089 },
-  { id: "dir",      name: "דיר אל-אסד",    lat: 32.9036, lng: 35.3142 },
-  { id: "arabe",    name: "עראבה",         lat: 32.8547, lng: 35.3378 },
-  { id: "sakhnin",  name: "סחנין",         lat: 32.8614, lng: 35.2978 },
+  {
+    id: "south",
+    name: "ראמה, סאגור, שזור, עין אל-אסד, עראבה, סחנין, מגאר",
+    short: "ראמה - עראבה - מגאר",
+    lat: 32.907,
+    lng: 35.355,
+    radius: 9500,
+    color: "#C8102E",
+    villages: ["ראמה","סאגור","שזור","עין אל-אסד","עראבה","סחנין","מגאר"],
+  },
+  {
+    id: "center",
+    name: "נחף, כרמיאל, דיר אל-אסד, בעינה, מגד אל-כרום",
+    short: "כרמיאל - נחף - בעינה",
+    lat: 32.918,
+    lng: 35.300,
+    radius: 7000,
+    color: "#1d4ed8",
+    villages: ["נחף","כרמיאל","דיר אל-אסד","בעינה","מגד אל-כרום"],
+  },
+  {
+    id: "north",
+    name: "פקיעין, חורפיש, בית ג'ן, כסרה-סמיע",
+    short: "פקיעין - חורפיש - כסרה",
+    lat: 32.987,
+    lng: 35.322,
+    radius: 8000,
+    color: "#16a34a",
+    villages: ["פקיעין","חורפיש","בית ג'ן","כסרה-סמיע"],
+  },
 ];
 
 export default function MapPage({ cartCount = 0, onAreaSelect }) {
   const navigate   = useNavigate();
   const mapRef     = useRef(null);
   const leafRef    = useRef(null);
-  const markersRef = useRef({});
-  const circleRef  = useRef(null);
+  const circlesRef = useRef({});
   const [ready,    setReady]    = useState(false);
   const [selected, setSelected] = useState(null);
 
@@ -52,12 +66,16 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     const L = window.L;
 
     const map = L.map(mapRef.current, {
-      center: [32.935, 35.340],
+      // منتصف المنطقة كاملة - الجليل الغربي
+      center: [32.945, 35.330],
       zoom: 11,
       zoomControl: false,
       attributionControl: false,
-      minZoom: 9,
-      maxZoom: 15,
+      minZoom: 10,
+      maxZoom: 14,
+      // تحديد حدود الخريطة عشان ما يطلع برة المنطقة
+      maxBounds: [[32.70, 35.10], [33.20, 35.60]],
+      maxBoundsViscosity: 0.9,
     });
 
     L.tileLayer(
@@ -67,20 +85,28 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
 
     leafRef.current = map;
 
+    // رسم دائرة لكل منطقة
     AREAS.forEach(area => {
+      // الدائرة الخارجية الشفافة
+      const circle = L.circle([area.lat, area.lng], {
+        radius:      area.radius,
+        color:       area.color,
+        weight:      2.5,
+        opacity:     0.8,
+        fillColor:   area.color,
+        fillOpacity: 0.12,
+        dashArray:   null,
+      }).addTo(map);
+
+      // pin في المنتصف
       const icon = L.divIcon({
         html: `
-          <div class="yg-pin" id="pin-${area.id}">
-            <div class="yg-pin-circle">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="${C.red}">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-              </svg>
-            </div>
-            <div class="yg-pin-tail"></div>
-            <div class="yg-pin-label">${area.name}</div>
+          <div class="yg-pin" id="pin-${area.id}" style="--col:${area.color}">
+            <div class="yg-pin-dot"></div>
+            <div class="yg-pin-label">${area.short}</div>
           </div>
         `,
-        className: "",
+        className:  "",
         iconSize:   [10, 10],
         iconAnchor: [5, 5],
       });
@@ -92,54 +118,49 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
           selectArea(area, map, L);
         });
 
-      markersRef.current[area.id] = marker;
+      circle.on("click", () => selectArea(area, map, L));
+
+      circlesRef.current[area.id] = { circle, marker };
     });
 
-    map.on("click", () => deselect(map));
+    map.on("click", () => deselect());
 
     return () => {
       map.remove();
-      leafRef.current    = null;
-      markersRef.current = {};
-      circleRef.current  = null;
+      leafRef.current  = null;
+      circlesRef.current = {};
     };
   }, [ready]);
 
   function selectArea(area, map, L) {
-    if (circleRef.current) { map.removeLayer(circleRef.current); circleRef.current = null; }
-    AREAS.forEach(a => setPinActive(a.id, false));
-    setPinActive(area.id, true);
-    const circle = L.circle([area.lat, area.lng], {
-      radius: 3500, color: C.red, weight: 2,
-      opacity: 0.6, fillColor: C.red, fillOpacity: 0.10, dashArray: "6,4",
-    }).addTo(map);
-    circleRef.current = circle;
-    map.flyTo([area.lat, area.lng], 13, { duration: 0.6 });
+    // reset all
+    AREAS.forEach(a => setPinActive(a.id, false, a.color));
+    // activate
+    setPinActive(area.id, true, area.color);
+    map.flyTo([area.lat, area.lng], 12, { duration: 0.5 });
     setSelected(area);
   }
 
-  function deselect(map) {
-    if (circleRef.current && map) { map.removeLayer(circleRef.current); circleRef.current = null; }
-    AREAS.forEach(a => setPinActive(a.id, false));
+  function deselect() {
+    AREAS.forEach(a => setPinActive(a.id, false, a.color));
     setSelected(null);
   }
 
-  function setPinActive(id, active) {
+  function setPinActive(id, active, color) {
     const el = document.getElementById(`pin-${id}`);
     if (!el) return;
-    const circle = el.querySelector(".yg-pin-circle");
-    const tail   = el.querySelector(".yg-pin-tail");
-    const label  = el.querySelector(".yg-pin-label");
-    if (circle) {
-      circle.style.background = active ? C.red : "white";
-      circle.style.transform  = active ? "scale(1.25)" : "scale(1)";
-      circle.querySelector("svg path").setAttribute("fill", active ? "white" : C.red);
+    const dot   = el.querySelector(".yg-pin-dot");
+    const label = el.querySelector(".yg-pin-label");
+    if (dot) {
+      dot.style.background  = active ? color : "white";
+      dot.style.transform   = active ? "scale(1.4)" : "scale(1)";
+      dot.style.boxShadow   = active ? `0 0 0 4px ${color}33` : `0 2px 6px rgba(0,0,0,0.2)`;
     }
-    if (tail)  tail.style.borderTopColor = C.red;
     if (label) {
-      label.style.background  = active ? C.red   : "white";
-      label.style.color       = active ? "white" : C.dark;
-      label.style.fontWeight  = active ? "900"   : "700";
+      label.style.background   = active ? color : "white";
+      label.style.color        = active ? "white" : "#111827";
+      label.style.fontWeight   = active ? "900" : "700";
+      label.style.borderColor  = color;
     }
   }
 
@@ -148,49 +169,45 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
       <style>{`
         @keyframes spin    { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { transform: translateY(110%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes pinPop  { 0%{transform:scale(0.5);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
-        .leaflet-container { background: #f0ece4 !important; }
         .mBtn:active { transform: scale(0.91); }
+        .leaflet-container { background: #f0ece4 !important; }
 
         .yg-pin {
-          display: flex; flex-direction: column; align-items: center;
-          animation: pinPop 0.35s ease;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
           cursor: pointer;
         }
-        .yg-pin-circle {
-          width: 36px; height: 36px; border-radius: 50%;
-          background: white; border: 2.5px solid ${C.red};
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 2px 8px rgba(200,16,46,0.3);
+        .yg-pin-dot {
+          width: 20px; height: 20px;
+          border-radius: 50%;
+          background: white;
+          border: 2.5px solid var(--col);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
           transition: all 0.2s ease;
-        }
-        .yg-pin-tail {
-          width: 0; height: 0;
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-top: 8px solid ${C.red};
-          margin-top: -1px;
         }
         .yg-pin-label {
-          margin-top: 3px;
           background: white;
-          color: ${C.dark};
-          font-size: 9px;
+          color: #111827;
+          font-size: 9.5px;
           font-weight: 700;
-          padding: 2px 6px;
-          border-radius: 6px;
+          padding: 3px 7px;
+          border-radius: 8px;
           white-space: nowrap;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-          border: 1px solid #E5E7EB;
+          border: 1.5px solid var(--col);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.12);
           transition: all 0.2s ease;
           font-family: Arial, sans-serif;
+          max-width: 140px;
+          text-align: center;
         }
       `}</style>
 
       {/* Header */}
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, zIndex: 1000,
-        background: "white", boxShadow: "0 1px 0 rgba(0,0,0,0.07)",
+        background: "white", boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
         padding: "12px 16px", display: "flex", alignItems: "center", gap: 12,
       }}>
         <button className="mBtn" onClick={() => navigate(-1)} style={{
@@ -204,8 +221,13 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         </button>
         <div style={{ flex: 1, textAlign: "center" }}>
           <div style={{ fontSize: 16, fontWeight: 900, color: C.dark }}>בחר אזור משלוח</div>
-          <div style={{ fontSize: 11, marginTop: 1, fontWeight: selected ? 800 : 400, color: selected ? C.red : C.gray, transition: "color 0.25s" }}>
-            {selected ? `✓ ${selected.name}` : "לחץ על סמן האזור שלך"}
+          <div style={{
+            fontSize: 11, marginTop: 1,
+            fontWeight: selected ? 800 : 400,
+            color: selected ? selected.color : C.gray,
+            transition: "color 0.25s",
+          }}>
+            {selected ? `✓ ${selected.short}` : "לחץ על הדגל שלך במפה"}
           </div>
         </div>
         <div style={{ width: 38 }}/>
@@ -213,8 +235,9 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
 
       {/* Map */}
       <div ref={mapRef} style={{
-        position: "absolute", top: 62, left: 0, right: 0,
-        bottom: selected ? 162 : 80,
+        position: "absolute",
+        top: 62, left: 0, right: 0,
+        bottom: selected ? 170 : 80,
         transition: "bottom 0.35s cubic-bezier(0.34,1.1,0.64,1)",
       }}/>
 
@@ -233,7 +256,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         </div>
       )}
 
-      {/* Zoom */}
+      {/* Zoom buttons */}
       <div style={{
         position: "absolute", left: 12, top: "50%",
         transform: "translateY(-50%)", zIndex: 900,
@@ -261,37 +284,47 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
           boxShadow: "0 -6px 28px rgba(0,0,0,0.13)",
           animation: "slideUp 0.32s cubic-bezier(0.34,1.1,0.64,1)",
         }}>
-          <div style={{ width: 36, height: 4, background: "#E5E7EB", borderRadius: 2, margin: "0 auto 14px" }}/>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+          <div style={{ width: 36, height: 4, background: "#E5E7EB", borderRadius: 2, margin: "0 auto 12px" }}/>
+
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
             <div style={{
-              width: 48, height: 48, borderRadius: 14,
-              background: "rgba(200,16,46,0.07)", border: "1.5px solid rgba(200,16,46,0.18)",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              width: 46, height: 46, borderRadius: 13, flexShrink: 0,
+              background: `${selected.color}15`,
+              border: `1.5px solid ${selected.color}40`,
+              display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill={C.red}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill={selected.color}>
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 900, color: C.dark }}>{selected.name}</div>
-              <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 700, marginTop: 2 }}>✓ אזור פעיל • משלוח זמין</div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 900, color: C.dark, lineHeight: 1.4 }}>
+                {selected.name}
+              </div>
+              <div style={{ fontSize: 11, color: "#16a34a", fontWeight: 700, marginTop: 3 }}>
+                ✓ אזור פעיל • משלוח זמין
+              </div>
             </div>
-            <button className="mBtn" onClick={() => deselect(leafRef.current)} style={{
+
+            <button onClick={() => deselect()} style={{
               background: "#F3F4F6", border: "none", borderRadius: "50%",
-              width: 30, height: 30, cursor: "pointer", flexShrink: 0,
+              width: 28, height: 28, cursor: "pointer", flexShrink: 0,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 14, color: C.gray,
+              fontSize: 13, color: C.gray,
             }}>✕</button>
           </div>
+
           <button className="mBtn"
             onClick={() => { onAreaSelect?.(selected); navigate("/"); }}
             style={{
-              width: "100%", background: `linear-gradient(135deg, ${C.red}, #a00020)`,
+              width: "100%",
+              background: `linear-gradient(135deg, ${selected.color}, ${selected.color}cc)`,
               border: "none", borderRadius: 16, padding: "15px",
               color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer",
-              boxShadow: "0 4px 18px rgba(200,16,46,0.35)",
+              boxShadow: `0 4px 18px ${selected.color}50`,
             }}>
-            בחר {selected.name} ←
+            בחר {selected.short} ←
           </button>
         </div>
       )}
