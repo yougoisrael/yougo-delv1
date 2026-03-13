@@ -1,14 +1,9 @@
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  MapPage.jsx — ✅ Fixed v4
-//  - Leaflet loaded via dynamic import to avoid Vite CSS issues
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import BottomNav from "../components/BottomNav";
 
 const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280" };
-
 const TILE_LIGHT = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 const TILE_DARK  = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 
@@ -29,38 +24,29 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     () => window.matchMedia?.("(prefers-color-scheme: dark)").matches
   );
 
-  // ── 1. Load zones from Supabase ──────────────────
+  // ── 1. Load zones ─────────────────────────────────
   useEffect(() => {
-    async function fetchZones() {
-      try {
-        const { data, error: err } = await supabase
-          .from("delivery_zones")
-          .select("id, name, lat, lng, color, is_active")
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true });
-
-        if (err) throw err;
-        setAreas(data || []);
-      } catch (e) {
-        console.error("MapPage: failed to load zones", e);
-        setError("לא ניתן לטעון אזורים. נסה שוב.");
-      } finally {
+    supabase
+      .from("delivery_zones")
+      .select("id, name, lat, lng, color, is_active")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .then(({ data, error: err }) => {
+        if (err) { setError("לא ניתן לטעון אזורים. נסה שוב."); }
+        else { setAreas(data || []); }
         setLoading(false);
-      }
-    }
-    fetchZones();
+      });
   }, []);
 
-  // ── 2. Load Leaflet dynamically then init map ─────
+  // ── 2. Init map ───────────────────────────────────
   useEffect(() => {
     if (loading || !mapRef.current || leafRef.current) return;
 
-    async function initMap() {
-      // Dynamic import avoids Vite CSS bundling issues
-      const L = (await import("leaflet")).default;
-      await import("leaflet/dist/leaflet.css");
+    // Only import the JS — CSS is loaded via <link> in index.html
+    import("leaflet").then(mod => {
+      const L = mod.default;
 
-      // Fix broken icon paths in production builds
+      // Fix Vite broken icon paths
       delete L.Icon.Default.prototype._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -111,31 +97,26 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         markersRef.current[area.id] = marker;
       });
 
-      map.on("click", () => deselect(map, L));
-    }
-
-    initMap().catch(e => {
-      console.error("Map init error:", e);
+      map.on("click", () => deselect(map));
+    }).catch(e => {
+      console.error("Leaflet load error:", e);
       setError("שגיאה בטעינת המפה. נסה שוב.");
     });
 
     return () => {
       if (leafRef.current) {
         leafRef.current.remove();
-        leafRef.current  = null;
+        leafRef.current = null;
         markersRef.current = {};
-        circleRef.current  = null;
-        tileRef.current    = null;
+        circleRef.current = null;
+        tileRef.current = null;
       }
     };
   }, [loading, areas]);
 
-  // ── 3. Toggle dark/light tile layer ──────────────
+  // ── 3. Dark mode toggle ───────────────────────────
   useEffect(() => {
-    const map  = leafRef.current;
-    const tile = tileRef.current;
-    if (!map || !tile) return;
-    tile.setUrl(darkMode ? TILE_DARK : TILE_LIGHT);
+    tileRef.current?.setUrl(darkMode ? TILE_DARK : TILE_LIGHT);
   }, [darkMode]);
 
   // ── Helpers ───────────────────────────────────────
@@ -143,24 +124,18 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
     if (circleRef.current) { map.removeLayer(circleRef.current); circleRef.current = null; }
     areas.forEach(a => setPinActive(a.id, false));
     setPinActive(area.id, true);
-
     const circle = L.circle([area.lat, area.lng], {
-      radius: 4500,
-      color: area.color || C.red,
-      weight: 2,
-      opacity: 0.6,
-      fillColor: area.color || C.red,
-      fillOpacity: 0.10,
-      dashArray: "6,4",
+      radius: 4500, color: area.color || C.red, weight: 2,
+      opacity: 0.6, fillColor: area.color || C.red,
+      fillOpacity: 0.10, dashArray: "6,4",
     }).addTo(map);
     circleRef.current = circle;
-
     map.flyTo([area.lat, area.lng], 12, { duration: 0.6 });
     setSelected(area);
   }
 
-  function deselect(map, L) {
-    if (circleRef.current && map) { map.removeLayer(circleRef.current); circleRef.current = null; }
+  function deselect(map) {
+    if (circleRef.current) { map.removeLayer(circleRef.current); circleRef.current = null; }
     areas.forEach(a => setPinActive(a.id, false));
     setSelected(null);
   }
@@ -204,7 +179,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
         .leaflet-container { background: #f0ece4 !important; }
       `}</style>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, zIndex: 1000,
         background: "white", boxShadow: "0 1px 0 rgba(0,0,0,0.07)",
@@ -215,164 +190,94 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
           width: 38, height: 38, cursor: "pointer", flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="#111" strokeWidth="2.5" strokeLinecap="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round">
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </button>
-
         <div style={{ flex: 1, textAlign: "center" }}>
           <div style={{ fontSize: 16, fontWeight: 900, color: C.dark }}>בחר אזור משלוח</div>
-          <div style={{
-            fontSize: 11, marginTop: 1,
-            fontWeight: selected ? 800 : 400,
-            color: selected ? C.red : C.gray,
-            transition: "color 0.25s",
-          }}>
+          <div style={{ fontSize: 11, marginTop: 1, fontWeight: selected ? 800 : 400, color: selected ? C.red : C.gray, transition: "color 0.25s" }}>
             {selected ? `✓ ${selected.name}` : "לחץ על סמן האזור שלך"}
           </div>
         </div>
-
         <button className="mBtn" onClick={() => setDarkMode(d => !d)} style={{
           background: "#F3F4F6", border: "none", borderRadius: 10,
           width: 36, height: 36, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 16,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
         }}>
           {darkMode ? "☀️" : "🌙"}
         </button>
       </div>
 
-      {/* ── Map container ── */}
+      {/* Map */}
       <div ref={mapRef} style={{
-        position: "absolute",
-        top: 62, left: 0, right: 0,
+        position: "absolute", top: 62, left: 0, right: 0,
         bottom: selected ? 162 : 80,
         transition: "bottom 0.35s cubic-bezier(0.34,1.1,0.64,1)",
       }}/>
 
-      {/* ── Loading spinner ── */}
+      {/* Loading */}
       {loading && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 600, background: "white",
-          display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", gap: 14,
-        }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: "50%",
-            border: "3px solid rgba(200,16,46,0.15)",
-            borderTopColor: C.red,
-            animation: "spin 0.8s linear infinite",
-          }}/>
+        <div style={{ position: "absolute", inset: 0, zIndex: 600, background: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: "50%", border: "3px solid rgba(200,16,46,0.15)", borderTopColor: C.red, animation: "spin 0.8s linear infinite" }}/>
           <div style={{ color: C.gray, fontSize: 13, fontWeight: 700 }}>טוען אזורים...</div>
         </div>
       )}
 
-      {/* ── Error state ── */}
+      {/* Error */}
       {error && !loading && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 600, background: "white",
-          display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", gap: 14, padding: 24,
-        }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 600, background: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 24 }}>
           <div style={{ fontSize: 40 }}>⚠️</div>
           <div style={{ color: C.dark, fontSize: 15, fontWeight: 700, textAlign: "center" }}>{error}</div>
-          <button onClick={() => window.location.reload()} style={{
-            background: C.red, color: "white", border: "none",
-            borderRadius: 12, padding: "12px 24px",
-            fontSize: 14, fontWeight: 800, cursor: "pointer",
-          }}>נסה שוב</button>
+          <button onClick={() => window.location.reload()} style={{ background: C.red, color: "white", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+            נסה שוב
+          </button>
         </div>
       )}
 
-      {/* ── Empty zones state ── */}
+      {/* Empty */}
       {!loading && !error && areas.length === 0 && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 600, background: "white",
-          display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center", gap: 10, padding: 24,
-        }}>
+        <div style={{ position: "absolute", inset: 0, zIndex: 600, background: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: 24 }}>
           <div style={{ fontSize: 40 }}>🗺️</div>
           <div style={{ color: C.dark, fontSize: 15, fontWeight: 700 }}>אין אזורים פעילים כרגע</div>
-          <div style={{ color: C.gray, fontSize: 13, textAlign: "center" }}>
-            צור קשר עם המנהל להוספת אזורי משלוח
-          </div>
+          <div style={{ color: C.gray, fontSize: 13, textAlign: "center" }}>צור קשר עם המנהל להוספת אזורי משלוח</div>
         </div>
       )}
 
-      {/* ── Zoom controls ── */}
-      <div style={{
-        position: "absolute", left: 12, top: "50%",
-        transform: "translateY(-50%)", zIndex: 900,
-        display: "flex", flexDirection: "column", gap: 6,
-      }}>
+      {/* Zoom */}
+      <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 900, display: "flex", flexDirection: "column", gap: 6 }}>
         {[["+", 1], ["-", -1]].map(([l, d]) => (
           <button key={l} className="mBtn"
             onClick={() => leafRef.current?.setZoom((leafRef.current.getZoom() || 11) + d)}
-            style={{
-              background: "white", border: "1px solid #E5E7EB",
-              borderRadius: 10, width: 36, height: 36,
-              color: C.dark, fontSize: 18, fontWeight: 700, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            }}>{l}
+            style={{ background: "white", border: "1px solid #E5E7EB", borderRadius: 10, width: 36, height: 36, color: C.dark, fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+            {l}
           </button>
         ))}
       </div>
 
-      {/* ── Selected area card ── */}
+      {/* Selected card */}
       {selected && (
-        <div style={{
-          position: "absolute", bottom: 80, left: 0, right: 0, zIndex: 1000,
-          background: "white", borderRadius: "22px 22px 0 0",
-          padding: "14px 20px 18px",
-          boxShadow: "0 -6px 28px rgba(0,0,0,0.13)",
-          animation: "slideUp 0.32s cubic-bezier(0.34,1.1,0.64,1)",
-        }}>
+        <div style={{ position: "absolute", bottom: 80, left: 0, right: 0, zIndex: 1000, background: "white", borderRadius: "22px 22px 0 0", padding: "14px 20px 18px", boxShadow: "0 -6px 28px rgba(0,0,0,0.13)", animation: "slideUp 0.32s cubic-bezier(0.34,1.1,0.64,1)" }}>
           <div style={{ width: 36, height: 4, background: "#E5E7EB", borderRadius: 2, margin: "0 auto 14px" }}/>
-
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: 14,
-              background: "rgba(200,16,46,0.07)",
-              border: "1.5px solid rgba(200,16,46,0.18)",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(200,16,46,0.07)", border: "1.5px solid rgba(200,16,46,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill={C.red}>
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
             </div>
-
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 16, fontWeight: 900, color: C.dark }}>{selected.name}</div>
-              <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 700, marginTop: 2 }}>
-                ✓ אזור פעיל • משלוח זמין
-              </div>
+              <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 700, marginTop: 2 }}>✓ אזור פעיל • משלוח זמין</div>
             </div>
-
-            <button className="mBtn" onClick={() => deselect(leafRef.current, LRef.current)} style={{
-              background: "#F3F4F6", border: "none", borderRadius: "50%",
-              width: 30, height: 30, cursor: "pointer", flexShrink: 0,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 14, color: C.gray,
-            }}>✕</button>
+            <button className="mBtn" onClick={() => deselect(leafRef.current)} style={{ background: "#F3F4F6", border: "none", borderRadius: "50%", width: 30, height: 30, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: C.gray }}>✕</button>
           </div>
-
-          <button className="mBtn"
-            onClick={() => { onAreaSelect?.(selected); navigate("/"); }}
-            style={{
-              width: "100%",
-              background: `linear-gradient(135deg, ${C.red}, #a00020)`,
-              border: "none", borderRadius: 16, padding: "15px",
-              color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer",
-              boxShadow: "0 4px 18px rgba(200,16,46,0.35)",
-            }}>
+          <button className="mBtn" onClick={() => { onAreaSelect?.(selected); navigate("/"); }} style={{ width: "100%", background: `linear-gradient(135deg, ${C.red}, #a00020)`, border: "none", borderRadius: 16, padding: "15px", color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer", boxShadow: "0 4px 18px rgba(200,16,46,0.35)" }}>
             בחר {selected.name} ←
           </button>
         </div>
       )}
 
-      {/* ── BottomNav ── */}
+      {/* BottomNav */}
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 999 }}>
         <BottomNav cartCount={cartCount}/>
       </div>
