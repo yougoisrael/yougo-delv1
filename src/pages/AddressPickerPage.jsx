@@ -78,19 +78,31 @@ const CSS = `
 /* ══════════════════════════════════════════════
    ZONE SELECTOR  (Step 0)
 ══════════════════════════════════════════════ */
-function ZoneSelector({ onFamilyMap, onSaveAndGo, cartCount = 0 }) {
+function ZoneSelector({ onFamilyMap, onSaveAndGo, cartCount = 0, user, onNeedLogin }) {
   const [busy,   setBusy]   = useState(false);
   const [gpsErr, setGpsErr] = useState("");
   const [saved,  setSaved]  = useState(loadSaved);
   const [tap,    setTap]    = useState(null);
 
+  const [gpsDone, setGpsDone] = useState(false);
+
   function detectGPS() {
-    setBusy(true); setGpsErr("");
+    setBusy(true); setGpsErr(""); setGpsDone(false);
     if (!navigator.geolocation) { setGpsErr("GPS אינו זמין בדפדפן זה"); setBusy(false); return; }
     navigator.geolocation.getCurrentPosition(
       ({ coords: { latitude: la, longitude: lo } }) => {
+        const zone   = nearestZone(la, lo);
+        const coords = { lat: la, lng: lo };
+        /* ── Auto-save to localStorage immediately ── */
+        const norm = {
+          id: zone.id, short: zone.short, name: zone.nameHe,
+          lat: zone.lat, lng: zone.lng, radius: zone.radius,
+          coords,
+        };
+        try { localStorage.setItem("yougo_area", JSON.stringify(norm)); } catch {}
+        setGpsDone(true);
         setBusy(false);
-        onSaveAndGo({ zone: nearestZone(la, lo), coords: { lat: la, lng: lo } });
+        setTimeout(() => onSaveAndGo({ zone, coords }), 700);
       },
       (e) => {
         setBusy(false);
@@ -187,7 +199,7 @@ function ZoneSelector({ onFamilyMap, onSaveAndGo, cartCount = 0 }) {
 
         {/* Family/Friend button */}
         <div style={{ padding: "10px 16px 0" }}>
-          <button className="ygbtn" onClick={onFamilyMap} style={{
+          <button className="ygbtn" onClick={() => { if (!user?.id) { onNeedLogin?.(); return; } onFamilyMap(); }} style={{
             width: "100%", border: `2px dashed #D1D5DB`, borderRadius: 16,
             padding: "13px 18px", background: "white", cursor: "pointer",
             display: "flex", alignItems: "center", gap: 12,
@@ -788,11 +800,59 @@ function MapPicker({ onBack, onSaved, cartCount = 0 }) {
 }
 
 /* ══════════════════════════════════════════════
+   LOGIN MODAL — Phone number entry (smooth)
+══════════════════════════════════════════════ */
+function LoginModal({ onClose, onDone }) {
+  const navigate = useNavigate();
+  return (
+    <div style={{
+      position:"fixed",inset:0,zIndex:2000,
+      background:"rgba(0,0,0,.55)",backdropFilter:"blur(4px)",
+      display:"flex",alignItems:"flex-end",fontFamily:"system-ui,Arial,sans-serif",direction:"rtl",
+    }} onClick={e => { if(e.target===e.currentTarget) onClose(); }}>
+      <div style={{
+        width:"100%",maxWidth:430,margin:"0 auto",
+        background:"white",borderRadius:"24px 24px 0 0",
+        padding:"20px 20px 40px",
+        animation:"addrSheet .3s cubic-bezier(.34,1.1,.64,1)",
+      }}>
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18 }}>
+          <button onClick={onClose} style={{ width:32,height:32,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:17,fontWeight:900,color:"#111827" }}>כדי להמשיך</div>
+            <div style={{ fontSize:12,color:"#6B7280",marginTop:2 }}>הוסף מיקום משפחה דורש התחברות</div>
+          </div>
+          <div style={{ width:32 }}/>
+        </div>
+        <button onClick={() => { onClose(); navigate("/profile"); }} style={{
+          width:"100%",background:"linear-gradient(135deg,#C8102E,#9B0B22)",
+          border:"none",borderRadius:16,padding:"15px",
+          color:"white",fontSize:15,fontWeight:900,cursor:"pointer",
+          boxShadow:"0 5px 20px rgba(200,16,46,.35)",marginBottom:10,
+          display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+          fontFamily:"inherit",
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          כניסה / הרשמה
+        </button>
+        <button onClick={onClose} style={{ width:"100%",background:"none",border:"none",color:"#6B7280",fontSize:13,cursor:"pointer",padding:"8px",fontFamily:"inherit" }}>
+          בטל
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+/* ══════════════════════════════════════════════
    ROOT EXPORT
 ══════════════════════════════════════════════ */
-export default function AddressPickerPage({ onAddressSave, initialZone, cartCount = 0 }) {
+export default function AddressPickerPage({ onAddressSave, initialZone, cartCount = 0, user, guest }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   function handleSaveAndGo({ zone, coords }) {
     const norm = {
@@ -824,10 +884,17 @@ export default function AddressPickerPage({ onAddressSave, initialZone, cartCoun
   }
 
   return (
-    <ZoneSelector
-      onFamilyMap={() => setStep(1)}
-      onSaveAndGo={handleSaveAndGo}
-      cartCount={cartCount}
-    />
+    <>
+      <ZoneSelector
+        onFamilyMap={() => setStep(1)}
+        onSaveAndGo={handleSaveAndGo}
+        cartCount={cartCount}
+        user={user}
+        onNeedLogin={() => setShowLoginModal(true)}
+      />
+      {showLoginModal && (
+        <LoginModal onClose={() => setShowLoginModal(false)} onDone={() => setShowLoginModal(false)} />
+      )}
+    </>
   );
 }
