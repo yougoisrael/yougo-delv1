@@ -18,6 +18,7 @@ const MENU_ITEMS = [
   { Ico: IcoShield,     label: "אבטחה",            path: null, key: "security" },
   { Ico: IcoBell,       label: "התראות",            path: null, key: "notifications" },
   { Ico: IcoHelp,       label: "תמיכה",             path: "/support" },
+  { Ico: IcoMapPin,     label: "ניהול מפות אזורים", path: "/admin/zones" },
   { Ico: IcoDoc,        label: "תנאי שימוש",       path: "/terms" },
   { Ico: IcoLock,       label: "מדיניות פרטיות",   path: "/privacy" },
 ];
