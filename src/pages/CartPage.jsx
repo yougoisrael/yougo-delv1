@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { C, IcoBack, IcoPlus, IcoMinus, IcoClose, IcoCheck, IcoShield, IcoPin, IcoCash, IcoCreditCard } from "../components/Icons";
+import AuthPage from "./AuthPage";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
 
@@ -607,8 +608,7 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
   const [loading,    setLoading]    = useState(false);
   const [ordered,    setOrdered]    = useState(false);
   const [orderId,    setOrderId]    = useState(null);
-  const [showLogin,  setShowLogin]  = useState(false);
-  const [showReg,    setShowReg]    = useState(false);
+  const [showAuth,   setShowAuth]   = useState(false);
   const [showLocPicker, setShowLocPicker] = useState(false);
   const [stage, setStage] = useState(1); // 1=items, 2=checkout
   const [deliveryLoc,   setDeliveryLoc]   = useState(null);
@@ -663,7 +663,7 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
   }
 
   function handleAuthSuccess(u) {
-    setShowLogin(false); setShowReg(false);
+    setShowAuth(false);
     onLogin?.(u);
   }
 
@@ -826,7 +826,7 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
         {/* STAGE 1: go to checkout or login */}
         {stage === 1 && (
           guest ? (
-            <button onClick={()=>setShowLogin(true)}
+            <button onClick={()=>setShowAuth(true)}
               style={{ width:"100%",background:`linear-gradient(135deg,${RED},#9B0B22)`,color:"white",border:"none",borderRadius:16,padding:"16px",fontSize:16,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 6px 20px rgba(200,16,46,.35)" }}>
               🔐 התחבר/י להמשך הזמנה
             </button>
@@ -853,21 +853,15 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
         )}
       </div>
 
-      {/* Login Modal */}
-      {showLogin && (
-        <LoginModal
-          onClose={()=>setShowLogin(false)}
-          onSuccess={handleAuthSuccess}
-          onRegister={()=>{ setShowLogin(false); setShowReg(true); }}
-        />
-      )}
-
-      {/* Register Modal */}
-      {showReg && (
-        <RegisterModal
-          onClose={()=>setShowReg(false)}
-          onSuccess={handleAuthSuccess}
-        />
+      {/* Auth Modal — unified */}
+      {showAuth && (
+        <div style={{position:"fixed",inset:0,zIndex:9999,overflowY:"auto"}}>
+          <AuthPage
+            onDone={handleAuthSuccess}
+            onGuest={()=>setShowAuth(false)}
+            onBusiness={()=>setShowAuth(false)}
+          />
+        </div>
       )}
 
       {/* Location picker */}
