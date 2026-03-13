@@ -8,9 +8,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { supabase } from "../lib/supabase";
 import BottomNav from "../components/BottomNav";
+
+// Fix Leaflet icon paths broken by Vite bundler
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 const C = { red: "#C8102E", dark: "#111827", gray: "#6B7280" };
 
