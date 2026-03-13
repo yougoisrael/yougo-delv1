@@ -1,7 +1,27 @@
-import { useState } from "react";
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  useCart.js — v2 — localStorage persistence ✅
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import { useState, useEffect } from "react";
+
+const CART_KEY = "yougo_cart_v1";
+
+function loadCart() {
+  try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); } catch { return []; }
+}
+
+function saveCart(c) {
+  try { localStorage.setItem(CART_KEY, JSON.stringify(c)); } catch {}
+}
 
 export function useCart() {
-  const [cart, setCart] = useState([]);
+  const [cart, setCartRaw] = useState(loadCart);
+
+  // كل مرة بيتغير الكارت — احفظو فوري
+  function setCart(next) {
+    const val = typeof next === "function" ? next(cart) : next;
+    setCartRaw(val);
+    saveCart(val);
+  }
 
   function addToCart(item, rest) {
     setCart(prev => {
