@@ -9,24 +9,24 @@ const AREAS = [
     id: "east",
     short: "ראמה - מגאר - עראבה",
     name: "ראמה, סאגור, שזור, עין אל-אסד, עראבה, סחנין, מגאר",
-    lat: 32.907,
-    lng: 35.355,
+    lat: 32.9078,
+    lng: 35.3524,
     radius: 6500,
   },
   {
     id: "center",
     short: "כרמיאל - נחף - בעינה",
     name: "כרמיאל, נחף, דיר אל-אסד, בעינה, מגד אל-כרום",
-    lat: 32.916,
-    lng: 35.295,
+    lat: 32.9178,
+    lng: 35.2999,
     radius: 5000,
   },
   {
     id: "north",
     short: "פקיעין - חורפיש - כסרה",
     name: "פקיעין, חורפיש, בית ג'ן, כסרה-סמיע",
-    lat: 32.984,
-    lng: 35.318,
+    lat: 32.9873,
+    lng: 35.3220,
     radius: 5500,
   },
 ];
@@ -93,8 +93,8 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
           </div>
         `,
         className:  "",
-        iconSize:   [10, 10],
-        iconAnchor: [5, 5],
+        iconSize:   [38, 64],
+        iconAnchor: [19, 46],
       });
 
       L.marker([area.lat, area.lng], { icon })
