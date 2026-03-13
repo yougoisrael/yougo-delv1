@@ -276,7 +276,7 @@ export default function MapPage({ cartCount = 0, onAreaSelect }) {
             <button onClick={() => deselect(leafRef.current)} style={{ background:"#F3F4F6", border:"none", borderRadius:"50%", width:28, height:28, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, color:C.gray, flexShrink:0 }}>✕</button>
           </div>
           <button className="mBtn"
-            onClick={() => { onAreaSelect?.(selected); navigate("/"); }}
+            onClick={() => { onAreaSelect?.(selected); navigate(-1); }}
             style={{ width:"100%", background:`linear-gradient(135deg,${C.red},#a00020)`, border:"none", borderRadius:16, padding:"15px", color:"white", fontSize:15, fontWeight:900, cursor:"pointer", boxShadow:"0 4px 18px rgba(200,16,46,0.35)" }}>
             בחר {selected.short} ←
           </button>
