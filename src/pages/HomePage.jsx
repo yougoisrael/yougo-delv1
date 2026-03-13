@@ -538,11 +538,11 @@ export default function HomePage({ user, guest, cartCount, selectedArea, onAreaS
               <button onClick={() => setSearchOpen(true)} style={{ background:"none", border:"none", cursor:"pointer", padding:4, display:"flex" }}>
                 <IcoSearch />
               </button>
-              <div style={{ flex:1, display:"flex", alignItems:"center", gap:8, background:C.bg, borderRadius:24, padding:"7px 14px", cursor:"pointer" }}>
+              <div onClick={() => navigate("/map")} style={{ flex:1, display:"flex", alignItems:"center", gap:8, background:C.bg, borderRadius:24, padding:"7px 14px", cursor:"pointer" }}>
                 <IcoHome s={18} c={C.red} />
                 <div style={{ flex:1, textAlign:"right" }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:C.dark }}>בית</div>
-                  <div style={{ fontSize:10, color:C.gray }}>ראמה, ישראל</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:C.dark }}>{selectedArea ? selectedArea.short : "בחר אזור"}</div>
+                  <div style={{ fontSize:10, color:selectedArea ? "#16a34a" : C.gray }}>{selectedArea ? "לחץ לשינוי" : "לחץ לבחור אזור משלוח"}</div>
                 </div>
                 <IcoChevDown />
               </div>
