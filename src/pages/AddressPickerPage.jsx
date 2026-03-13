@@ -87,7 +87,6 @@ export default function AddressPickerPage({ onAddressSave }) {
 
     async function initMap() {
       const L = (await import("leaflet")).default;
-      await import("leaflet/dist/leaflet.css");
 
       delete L.Icon.Default.prototype._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -132,7 +131,7 @@ export default function AddressPickerPage({ onAddressSave }) {
       });
     }
 
-    initMap();
+    initMap().catch(e => { console.error('Map init:', e); });
 
     return () => {
       clearTimeout(debounceRef.current);
