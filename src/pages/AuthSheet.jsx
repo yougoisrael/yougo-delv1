@@ -349,11 +349,10 @@ export default function AuthSheet({ open, onClose, onDone, onBusiness }) {
     debounceRef.current = setTimeout(async()=>{
       try {
         const {local,intl,intlNoPlus,raw} = normalizePhone(val);
-        let found=null;
-        for (const v of [intl,local,intlNoPlus,raw]) {
-          const {data} = await supabase.from("users").select("email").eq("phone",v).maybeSingle();
-          if(data?.email){found=data.email;break;}
-        }
+        // FIX: use RPC — direct query blocked by RLS for anonymous users
+        const {data:found} = await supabase.rpc("get_email_by_phone", {
+          p1: intl, p2: local, p3: intlNoPlus, p4: raw
+        });
         if(found){ setLoginEmail(found); setMode("login"); }
         else      { setMode("register"); }
       } catch {
