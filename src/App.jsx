@@ -22,7 +22,6 @@ import MapPage        from "./pages/MapPage";
 import AddressPickerPage from "./pages/AddressPickerPage";
 import BusinessPortal from "./BusinessPortal";
 import AdminReal      from "./AdminReal";
-import AdminZonesPage from "./pages/AdminZonesPage";
 
 // شاشة السبلاش فقط — بدون تسجيل
 function SplashScreen({ onDone }) {
@@ -217,7 +216,7 @@ export default function App() {
       <Route path="/support"  element={<SupportPage user={user}/>}/>
       <Route path="/address"  element={<AddressPickerPage onAddressSave={handleAreaSelect} user={user} guest={!authed}/>}/>
       <Route path="/business" element={<BusinessPortal onBack={() => window.history.back()}/>}/>
-      <Route path="/admin/zones" element={<AdminZonesPage/>}/>
+      {/* /admin/zones removed — ניהול אזורים deleted from app */}
       <Route path="/admin" element={
         <AdminAuthGuard onBack={() => window.history.back()}>
           {({ onLogout }) => <AdminReal onBack={onLogout}/>}
