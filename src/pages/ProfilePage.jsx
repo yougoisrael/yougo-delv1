@@ -14,6 +14,7 @@ import {
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
 import BottomSheet from "../components/BottomSheet";
+import SettingsSheet from "./SettingsSheet";
 
 const RED  = "#C8102E";
 const DARK = "#111827";
@@ -143,6 +144,7 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
   const [passErr,    setPassErr]    = useState("");
   const [passBusy,   setPassBusy]   = useState(false);
   const [showLogout, setShowLogout] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // OTP timer
   useEffect(() => {
@@ -535,6 +537,18 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
             <div style={{ color:"white", fontSize:20, fontWeight:900 }}>{user?.name||"משתמש"}</div>
             <div style={{ color:"rgba(255,255,255,0.75)", fontSize:13, marginTop:3 }}>{user?.email||user?.phone||""}</div>
           </div>
+          {/* Settings gear button */}
+          <button onClick={()=>setShowSettings(true)} style={{
+            background:"rgba(255,255,255,0.15)", border:"none",
+            borderRadius:"50%", width:40, height:40,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            cursor:"pointer", flexShrink:0,
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="white" strokeWidth="1.8"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="white" strokeWidth="1.8"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -587,6 +601,13 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
       </div>
 
       <BottomNav cartCount={cartCount}/>
+
+      <SettingsSheet
+        open={showSettings}
+        onClose={()=>setShowSettings(false)}
+        user={user}
+        onLogout={onLogout}
+      />
     </div>
   );
 }
