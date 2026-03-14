@@ -78,7 +78,7 @@ const CSS = `
 /* ══════════════════════════════════════════════
    ZONE SELECTOR  (Step 0)
 ══════════════════════════════════════════════ */
-function ZoneSelector({ onFamilyMap, onSaveAndGo, cartCount = 0, user, onNeedLogin }) {
+function ZoneSelector({ onFamilyMap, onSaveAndGo, cartCount = 0, user, onNeedLogin, onClose }) {
   const [busy,   setBusy]   = useState(false);
   const [gpsErr, setGpsErr] = useState("");
   const [saved,  setSaved]  = useState(loadSaved);
@@ -127,7 +127,7 @@ function ZoneSelector({ onFamilyMap, onSaveAndGo, cartCount = 0, user, onNeedLog
     <div style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
       backdropFilter: "blur(4px)", zIndex: 500,
-    }} onClick={() => {/* don't close — must pick zone */}}/>
+    }} onClick={() => onClose?.()}/>
 
     {/* ── Bottom Sheet Modal ── */}
     <div style={{
@@ -145,10 +145,21 @@ function ZoneSelector({ onFamilyMap, onSaveAndGo, cartCount = 0, user, onNeedLog
       <style>{CSS}</style>
 
       {/* Drag handle + compact header */}
-      <div style={{ padding: "12px 20px 16px", flexShrink: 0, borderBottom: "1px solid #F0F0F0" }}>
+      <div style={{ padding: "12px 20px 16px", flexShrink: 0, borderBottom: "1px solid #F0F0F0", position:"relative" }}>
         <div style={{ display:"flex",justifyContent:"center",marginBottom:12 }}>
           <div style={{ width:38,height:4,borderRadius:2,background:"#D1D5DB" }}/>
         </div>
+        {/* X close button */}
+        <button onClick={()=>onClose?.()} style={{
+          position:"absolute",top:14,left:16,
+          width:32,height:32,borderRadius:"50%",
+          background:"#F3F4F6",border:"none",cursor:"pointer",
+          display:"flex",alignItems:"center",justifyContent:"center",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="#6B7280" strokeWidth="2.5" strokeLinecap="round"/>
+          </svg>
+        </button>
         <div style={{ display:"flex",alignItems:"center",gap:12 }}>
           <span style={{ fontSize:28 }}>🗺️</span>
           <div>
@@ -915,6 +926,7 @@ export default function AddressPickerPage({ onAddressSave, initialZone, cartCoun
         cartCount={cartCount}
         user={user}
         onNeedLogin={() => setShowLoginModal(true)}
+        onClose={() => navigate(-1)}
       />
       {showLoginModal && (
         <LoginModal onClose={() => setShowLoginModal(false)} onDone={() => setShowLoginModal(false)} />
