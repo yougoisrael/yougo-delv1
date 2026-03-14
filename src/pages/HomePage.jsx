@@ -9,6 +9,7 @@ import {
 } from "../components/Icons";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
+import { cachedQuery, invalidateCache, TTL } from "../lib/cache";
 
 function YougoLogo({ size = 36, white = false }) {
   var bg = white ? "white" : C.red, fg = white ? C.red : "white";
@@ -464,9 +465,10 @@ export default function HomePage({ user, guest, cartCount, selectedArea, onAreaS
   const [banner, setBanner] = useState(0);
   const [banners, setBanners] = useState(DEFAULT_BANNERS);
   useEffect(() => {
-    supabase.from("banners").select("*").eq("active", true).order("sort_order").then(({ data }) => {
-      if (data && data.length > 0) setBanners(data);
-    });
+    cachedQuery("banners:all",
+      () => supabase.from("banners").select("*").eq("active",true).order("sort_order"),
+      TTL.banners
+    ).then(({ data }) => { if (data?.length) setBanners(data); });
   }, []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -496,13 +498,11 @@ export default function HomePage({ user, guest, cartCount, selectedArea, onAreaS
   }, []);
 
   useEffect(() => {
-    supabase.from("restaurants").select("*").eq("active", true)
-      .or("page_type.eq.restaurant,page_type.is.null")   // only restaurants
-      .then(({ data }) => { setRestaurants(data||[]); setLoading(false); })
-      .catch(() => {
-        supabase.from("restaurants").select("*").eq("active", true)
-          .then(({ data }) => { setRestaurants(data||[]); setLoading(false); });
-      });
+    cachedQuery(
+      "restaurants:" + (selectedArea?.id || "all"),
+      () => supabase.from("restaurants").select("*").eq("active",true),
+      TTL.restaurants
+    ).then(({ data }) => { setRestaurants(data||[]); setLoading(false); });
   }, []);
 
   const filtered = restaurants.filter(r => {
