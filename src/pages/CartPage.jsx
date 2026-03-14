@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { C, IcoBack, IcoPlus, IcoMinus, IcoClose, IcoCheck, IcoShield, IcoPin, IcoCash, IcoCreditCard } from "../components/Icons";
 import AuthSheet from "../components/AuthSheet";
+import BottomSheet from "../components/BottomSheet";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
 
