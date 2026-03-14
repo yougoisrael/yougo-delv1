@@ -823,7 +823,7 @@ export default function CartPage({ cart, add, rem, setCart, cartCount, user, gue
         {/* STAGE 1: go to checkout or login */}
         {stage === 1 && (
           guest ? (
-            <button onClick={()=>setShowAuth(true)}
+            <button onClick={() => onLogin?.()}
               style={{ width:"100%",background:`linear-gradient(135deg,${RED},#9B0B22)`,color:"white",border:"none",borderRadius:16,padding:"16px",fontSize:16,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:"0 6px 20px rgba(200,16,46,.35)" }}>
               🔐 התחבר/י להמשך הזמנה
             </button>
