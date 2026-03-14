@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { cachedQuery, TTL } from "../lib/cache";
 import {
   C, hexA,
   IcoSearch, IcoClose, IcoHome, IcoChevDown, IcoShield,
@@ -370,12 +371,10 @@ export default function MarketPage({ cartCount, user, selectedArea, onAreaSelect
   }, []);
 
   useEffect(() => {
-    supabase.from("restaurants").select("*").eq("active", true).eq("page_type","market")
-      .then(({ data }) => { setStores(data||[]); setLoading(false); })
-      .catch(() => {
-        supabase.from("restaurants").select("*").eq("active",true)
-          .then(({ data }) => { setStores(data||[]); setLoading(false); });
-      });
+    cachedQuery("market:stores",
+      () => supabase.from("restaurants").select("*").eq("active",true).eq("page_type","market"),
+      TTL.restaurants
+    ).then(({ data }) => { setStores(data||[]); setLoading(false); });
   }, []);
 
   const filtered = stores.filter(s => {
