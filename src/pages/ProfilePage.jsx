@@ -12,7 +12,7 @@ import {
 } from "../components/Icons";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
-import AuthPage from "./AuthPage";
+import AuthSheet from "../components/AuthSheet";
 
 const RED  = "#C8102E";
 const DARK = "#111827";
@@ -526,13 +526,10 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
 
       {/* Auth Modal */}
       {showAuth && (
-        <div style={{position:"fixed",inset:0,zIndex:9999,overflowY:"auto"}}>
-          <AuthPage
-            onDone={(u) => { setShowAuth(false); onAuthDone?.(u); }}
-            onGuest={() => setShowAuth(false)}
-            onBusiness={() => setShowAuth(false)}
-          />
-        </div>
+        <AuthSheet
+          onClose={() => setShowAuth(false)}
+          onDone={(u) => { setShowAuth(false); onAuthDone?.(u); }}
+        />
       )}
     </div>
   );
