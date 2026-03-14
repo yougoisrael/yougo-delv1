@@ -13,7 +13,7 @@ import {
 } from "../components/Icons";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
-import AuthSheet from "../components/AuthSheet";
+import AuthSystem from "./AuthSystem";
 import BottomSheet from "../components/BottomSheet";
 
 const RED  = "#C8102E";
@@ -516,9 +516,10 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
 
       {/* Auth Modal */}
       {showAuth && (
-        <AuthSheet
-          onClose={() => setShowAuth(false)}
+        <AuthSystem
           onDone={(u) => { setShowAuth(false); onAuthDone?.(u); }}
+          onGuest={() => setShowAuth(false)}
+          onBusiness={() => setShowAuth(false)}
         />
       )}
     </div>
