@@ -3,6 +3,7 @@ import BottomSheet from "../components/BottomSheet";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { C, IcoBack, IcoCart, IcoPlus, IcoMinus, IcoFire, IcoPin, IcoCheck, IcoBurger, IcoShawarma, IcoPizza, IcoSushi, IcoChicken, IcoSalad, IcoDrink, IcoDessert, IcoFries, IcoNoodles, IcoSandwich, IcoPlate, IcoHot } from "../components/Icons";
 import { supabase } from "../lib/supabase";
+import { cachedQuery, TTL } from "../lib/cache";
 
 const CSS = `
   *{box-sizing:border-box}
@@ -262,10 +263,12 @@ export default function RestaurantPage({ cart, add, rem, cartCount }) {
   const r = rest || { name:"מסעדה", rating:5.0, delivery_time:25, delivery_fee:10, min_order:30, logo_emoji:"🍽️", category:"אוכל", cover_color:"#C8102E" };
 
   useEffect(() => {
-    supabase.from("menu_items").select("*")
-      .eq("restaurant_id", id).eq("available", true)
-      .order("sort_order")
-      .then(({ data }) => { setMenu(data || []); setLoading(false); });
+    cachedQuery(
+      "menu:" + id,
+      () => supabase.from("menu_items").select("*")
+            .eq("restaurant_id", id).eq("available", true).order("sort_order"),
+      TTL.menu
+    ).then(({ data }) => { setMenu(data || []); setLoading(false); });
   }, [id]);
 
   const sections = [...new Set(menu.map(m => m.category).filter(Boolean))];
