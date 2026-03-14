@@ -352,7 +352,7 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
             { Ico:IcoPackage, t:"מעקב הזמנות בזמן אמת" },
             { Ico:IcoCreditCard, t:"שמור אמצעי תשלום" },
             { Ico:IcoGift, t:"קופונים והטבות בלעדיות" },
-            { Ico:IcoFlash, t:"הזמנה מהירה יותר" },
+            { Ico:IcoLightning, t:"הזמנה מהירה יותר" },
           ].map((x,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"9px 0", borderBottom:i<3?"1px solid #F3F4F6":"none" }}>
               <span style={{ width:28, display:"flex", alignItems:"center", justifyContent:"center" }}>{x.Ico ? <x.Ico s={22} c="#C8102E"/> : null}</span>
