@@ -4,6 +4,9 @@ import { AdminAuthGuard } from "./lib/adminAuth";
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase";
 
+// ✅ AuthSystem — النظام الموحد (يستبدل AuthPage + AuthSheet)
+import AuthSystem from "./pages/AuthSystem";
+
 import HomePage       from "./pages/HomePage";
 import RestaurantPage from "./pages/RestaurantPage";
 import CartPage       from "./pages/CartPage";
@@ -88,6 +91,8 @@ export default function App() {
   const [checking,     setChecking]     = useState(true);
   const [showSplash,   setShowSplash]   = useState(true);
   const [showBusiness, setShowBusiness] = useState(false);
+  // ✅ showAuth — يفتح AuthSystem لما المستخدم يضغط تسجيل دخول من أي مكان
+  const [showAuth,     setShowAuth]     = useState(false);
   // منطقة الضيف المختارة
   const [selectedArea, setSelectedArea] = useState(
     () => { try { return JSON.parse(localStorage.getItem("yougo_area")||"null"); } catch{ return null; } }
@@ -152,6 +157,15 @@ export default function App() {
   // Business portal
   if (showBusiness) return <BusinessPortal onBack={() => setShowBusiness(false)}/>;
 
+  // ✅ AuthSystem — يظهر لما المستخدم يضغط تسجيل دخول
+  if (showAuth) return (
+    <AuthSystem
+      onDone={(u) => { setUser(u); setAuthed(true); setShowAuth(false); }}
+      onGuest={() => setShowAuth(false)}
+      onBusiness={() => { setShowAuth(false); setShowBusiness(true); }}
+    />
+  );
+
   // ✅ الكل يدخل مباشرة — الضيف والمسجل سوا
   return (
     <Routes>
@@ -177,12 +191,12 @@ export default function App() {
         <CartPage cart={cart} add={addToCart} rem={removeFromCart}
           setCart={setCart} cartCount={cartCount} user={user}
           guest={!authed} selectedArea={selectedArea}
-          onLogin={(u) => { if(u){setUser(u);setAuthed(true);} }}/>
+          onLogin={(u) => { if(u){setUser(u);setAuthed(true);} else setShowAuth(true); }}/>
       }/>
       <Route path="/orders" element={
-        <OrdersPage cartCount={cartCount} user={user} guest={!authed} onLogin={() => {}}/>
+        <OrdersPage cartCount={cartCount} user={user} guest={!authed} onLogin={() => setShowAuth(true)}/>
       }/>
-      {/* پروفيل — يفتح مربع التسجيل بالداخل لو ضيف */}
+      {/* פروفיל — يفتح AuthSystem لو ضيف */}
       <Route path="/profile" element={
         <ProfilePage
           user={user} cartCount={cartCount}
@@ -190,6 +204,7 @@ export default function App() {
           onUserUpdate={handleUserUpdate}
           guest={!authed}
           onAuthDone={(u) => { setUser(u); setAuthed(true); }}
+          onLogin={() => setShowAuth(true)}
         />
       }/>
       <Route path="/map" element={
@@ -197,8 +212,8 @@ export default function App() {
       }/>
       <Route path="/privacy"  element={<PrivacyPage/>}/>
       <Route path="/terms"    element={<TermsPage/>}/>
-      <Route path="/cards"    element={<CardsPage guest={!authed} user={user} onLogin={(u)=>{ if(u){setUser(u);setAuthed(true);} }} cartCount={cartCount}/>}/>
-      <Route path="/invite"   element={<InvitePage user={user} guest={!authed} onLogin={() => {}}/>}/>
+      <Route path="/cards"    element={<CardsPage guest={!authed} user={user} onLogin={(u)=>{ if(u){setUser(u);setAuthed(true);} else setShowAuth(true); }} cartCount={cartCount}/>}/>
+      <Route path="/invite"   element={<InvitePage user={user} guest={!authed} onLogin={() => setShowAuth(true)}/>}/>
       <Route path="/support"  element={<SupportPage user={user}/>}/>
       <Route path="/address"  element={<AddressPickerPage onAddressSave={handleAreaSelect} user={user} guest={!authed}/>}/>
       <Route path="/business" element={<BusinessPortal onBack={() => window.history.back()}/>}/>
