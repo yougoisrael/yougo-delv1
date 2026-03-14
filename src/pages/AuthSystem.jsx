@@ -294,7 +294,10 @@ function PwStrength({ value }) {
 
 // ─── OTP 6-digit component ────────────────────────────────────────────
 function OTPBoxes({ value, onChange, disabled, error }) {
-  const refs = Array.from({ length: 6 }, () => useRef(null));
+  // FIX: useRef must be called at top level — never inside .map() or Array.from callback
+  const r0 = useRef(null); const r1 = useRef(null); const r2 = useRef(null);
+  const r3 = useRef(null); const r4 = useRef(null); const r5 = useRef(null);
+  const refs = [r0, r1, r2, r3, r4, r5];
   const digits = Array.from({ length: 6 }, (_, i) => value[i] || "");
 
   const handleChange = (e, i) => {
@@ -480,6 +483,9 @@ export default function AuthSystem({ onDone, onGuest, onBusiness }) {
   const [error,          setError]         = useState("");
   const [fieldErrors,    setFieldErrors]   = useState({});
   const [successUser,    setSuccessUser]   = useState(null);
+  // FIX: forgot password state
+  const [forgotSending,  setForgotSending] = useState(false);
+  const [forgotSent,     setForgotSent]    = useState(false);
 
   const debounceRef  = useRef(null);
   const timerRef     = useRef(null);
@@ -525,6 +531,8 @@ export default function AuthSystem({ onDone, onGuest, onBusiness }) {
       setRegPass("");
       setRegPass2("");
       setLoginEmail("");
+      setForgotSent(false);
+      setForgotSending(false);
     }
 
     clearTimeout(debounceRef.current);
@@ -610,6 +618,22 @@ export default function AuthSystem({ onDone, onGuest, onBusiness }) {
     setMaskedEmail(maskEmail(loginEmail));
     setOtp("");
     setMode(M.OTP_SENT);
+  };
+
+  // ── Forgot password — send reset link to loginEmail ─────────────
+  const doForgotPassword = async () => {
+    if (!loginEmail || forgotSending) return;
+    setForgotSending(true);
+    setError("");
+    const { error: e } = await supabase.auth.resetPasswordForEmail(loginEmail, {
+      redirectTo: window.location.origin,
+    });
+    setForgotSending(false);
+    if (e) {
+      setError("שגיאה בשליחת הקישור — נסה שוב");
+    } else {
+      setForgotSent(true);
+    }
   };
 
   // ── Verify OTP ────────────────────────────────────────────────────
@@ -1204,14 +1228,21 @@ export default function AuthSystem({ onDone, onGuest, onBusiness }) {
                 }}>
                 🔢 כניסה דרך קוד
               </button>
-              <button type="button"
-                style={{
-                  background: "none", border: "none",
-                  color: C.gray, fontSize: 12, cursor: "pointer",
-                  fontFamily: "inherit",
-                }}>
-                שכחת סיסמה?
-              </button>
+              {forgotSent
+                ? <div style={{ fontSize: 11, color: C.green, fontWeight: 700 }}>
+                    ✓ קישור נשלח לאימייל
+                  </div>
+                : <button type="button"
+                    onClick={doForgotPassword}
+                    disabled={forgotSending}
+                    style={{
+                      background: "none", border: "none",
+                      color: C.gray, fontSize: 12, cursor: "pointer",
+                      fontFamily: "inherit", opacity: forgotSending ? 0.6 : 1,
+                    }}>
+                    {forgotSending ? "שולח..." : "שכחת סיסמה?"}
+                  </button>
+              }
             </motion.div>
           )}
         </AnimatePresence>
