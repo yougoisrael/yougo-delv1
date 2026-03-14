@@ -12,6 +12,38 @@ import BottomSheet from "./BottomSheet";
 import { supabase } from "../lib/supabase";
 import { IcoILFlag } from "./Icons";
 
+// ── hCaptcha (invisible) — skipped if no site key set ──
+const HCAP_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
+function loadHcap() {
+  if (!HCAP_KEY || document.getElementById("hcap-script")) return;
+  const s = document.createElement("script");
+  s.id = "hcap-script";
+  s.src = "https://js.hcaptcha.com/1/api.js?render=explicit";
+  s.async = true;
+  document.head.appendChild(s);
+}
+async function getCaptchaToken() {
+  if (!HCAP_KEY) return undefined;
+  return new Promise(resolve => {
+    function tryExec() {
+      if (!window.hcaptcha) { setTimeout(tryExec, 200); return; }
+      const el = document.createElement("div");
+      el.style.display = "none";
+      document.body.appendChild(el);
+      try {
+        const wid = window.hcaptcha.render(el, {
+          sitekey: HCAP_KEY, size: "invisible",
+          callback:           t => { try{document.body.removeChild(el);}catch{} resolve(t); },
+          "error-callback":   () => { try{document.body.removeChild(el);}catch{} resolve(undefined); },
+          "expired-callback": () => { try{document.body.removeChild(el);}catch{} resolve(undefined); },
+        });
+        window.hcaptcha.execute(wid);
+      } catch { try{document.body.removeChild(el);}catch{} resolve(undefined); }
+    }
+    tryExec();
+  });
+}
+
 const RED   = "#C8102E";
 const DARK  = "#111827";
 const GRAY  = "#6B7280";
@@ -192,7 +224,7 @@ export default function AuthSheet({ onClose, onDone }) {
       setOtpTimer(t=>{ if(t<=1){clearInterval(otpRef.current);setCanResend(true);return 0;} return t-1; });
     },1000);
   }
-  useEffect(()=>()=>clearInterval(otpRef.current),[]);
+  useEffect(()=>{ loadHcap(); return ()=>clearInterval(otpRef.current); },[]);
 
   async function submitPhone() {
     setPhoneErr("");
@@ -217,7 +249,11 @@ export default function AuthSheet({ onClose, onDone }) {
     setLoginErr("");
     if (!loginPass) { setLoginErr("הזן סיסמה"); return; }
     setBusy(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email:loginEmail, password:loginPass });
+    const captchaToken = await getCaptchaToken();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email:loginEmail, password:loginPass,
+      ...(captchaToken && { options:{ captchaToken } }),
+    });
     setBusy(false);
     if (error) { setLoginErr("סיסמה שגויה — נסה שוב"); return; }
     const m = data.user?.user_metadata||{};
@@ -227,7 +263,11 @@ export default function AuthSheet({ onClose, onDone }) {
   async function sendOtpCode() {
     if (!loginEmail) { setLoginErr("לא נמצא אימייל מקושר"); return; }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({ email:loginEmail, options:{ shouldCreateUser:false }});
+    const captchaToken = await getCaptchaToken();
+    const { error } = await supabase.auth.signInWithOtp({
+      email:loginEmail,
+      options:{ shouldCreateUser:false, ...(captchaToken && { captchaToken }) }
+    });
     setBusy(false);
     if (error) { setLoginErr(error.message?.includes("rate")?"יותר מדי בקשות — המתן דקה":"שגיאה בשליחת הקוד"); return; }
     setMaskedEmail(maskEmail(loginEmail));
@@ -277,7 +317,11 @@ export default function AuthSheet({ onClose, onDone }) {
     for (const v of phoneVariants(raw)){const{data}=await supabase.from("users").select("id").eq("phone",v).maybeSingle();if(data){pEx=data;break;}}
     if (pEx){ setRegErr("מספר הטלפון כבר רשום — נסה להתחבר"); setBusy(false); return; }
     const meta={ firstName:info.firstName.trim(), lastName:info.lastName.trim(), phone:raw, gender:info.gender, age:info.age };
-    const {data,error}=await supabase.auth.signUp({ email:e, password:regPass, options:{data:meta} });
+    const captchaToken = await getCaptchaToken();
+    const {data,error}=await supabase.auth.signUp({
+      email:e, password:regPass,
+      options:{ data:meta, ...(captchaToken && { captchaToken }) }
+    });
     if (error){ setRegErr((error.message?.toLowerCase().includes("already")||error.message?.toLowerCase().includes("registered"))?"האימייל כבר רשום — נסה להתחבר":"שגיאה: "+error.message); setBusy(false); return; }
     if (data.user) await supabase.from("users").upsert({ id:data.user.id, name:meta.firstName+" "+meta.lastName, phone:raw, email:e });
     setBusy(false);
