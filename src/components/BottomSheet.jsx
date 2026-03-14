@@ -10,8 +10,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 const CSS = `
   @keyframes bs-backdrop-in  { from{opacity:0}              to{opacity:1} }
   @keyframes bs-backdrop-out { from{opacity:1}              to{opacity:0} }
-  @keyframes bs-sheet-in     { from{transform:translateY(100%) translateZ(0)} to{transform:translateY(0) translateZ(0)} }
-  @keyframes bs-sheet-out    { from{transform:translateY(0) translateZ(0)}    to{transform:translateY(100%) translateZ(0)} }
+  @keyframes bs-sheet-in     { from{transform:translateX(-50%) translateY(100%) translateZ(0)} to{transform:translateX(-50%) translateY(0) translateZ(0)} }
+  @keyframes bs-sheet-out    { from{transform:translateX(-50%) translateY(0) translateZ(0)}    to{transform:translateX(-50%) translateY(100%) translateZ(0)} }
 `;
 
 export default function BottomSheet({
@@ -72,7 +72,7 @@ export default function BottomSheet({
     isDragging.current = true;
     startH.current = dy;
     if (sheetRef.current) {
-      sheetRef.current.style.transform = `translateY(${dy}px) translateZ(0)`;
+      sheetRef.current.style.transform = `translateX(-50%) translateY(${dy}px) translateZ(0)`;
     }
   }, []);
 
@@ -122,7 +122,7 @@ export default function BottomSheet({
           position: "fixed", bottom: 0,
           left: "50%",
           transform: "translateX(-50%) translateZ(0)",
-          width: "100%", maxWidth: 430,
+          width: "100vw", maxWidth: 430,
           background: "white",
           borderRadius: "26px 26px 0 0",
           zIndex: zIndex + 1,
