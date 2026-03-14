@@ -121,7 +121,7 @@ const MENU_ITEMS = [
 // ════════════════════════════════════════════════
 //  MAIN
 // ════════════════════════════════════════════════
-export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, guest, onAuthDone }) {
+export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, guest, onAuthDone, onLogin }) {
   const navigate = useNavigate();
 
   // حالة التسجيل المتعدد الخطوات
