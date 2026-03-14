@@ -13,7 +13,6 @@ import {
 } from "../components/Icons";
 import BottomNav from "../components/BottomNav";
 import { supabase } from "../lib/supabase";
-import AuthSystem from "./AuthSystem";
 import BottomSheet from "../components/BottomSheet";
 
 const RED  = "#C8102E";
@@ -30,7 +29,12 @@ const CSS  = `
 // ── helpers ──────────────────────────────────────
 const isPhone = v => { const d=(v||"").replace(/\D/g,""); return d.length>=9&&d.length<=12; };
 const isEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||"").trim());
-const pwErr   = v => { if(!v||v.length<6) return "לפחות 6 תווים"; return null; };
+const pwErr   = v => {
+  if (!v || v.length < 8) return "לפחות 8 תווים";
+  if (!/[A-Z]/.test(v))  return "חייב אות גדולה אחת";
+  if (!/\d/.test(v))     return "חייב מספר אחד לפחות";
+  return null;
+};
 
 function Spin() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -109,7 +113,6 @@ const MENU_ITEMS = [
   { Ico:IcoUsers,      label:"הזמן חבר",        path:"/invite" },
   { Ico:IcoBell,       label:"התראות",           key:"notifs" },
   { Ico:IcoHelp,       label:"תמיכה",            path:"/support" },
-  { Ico:IcoMapPin,     label:"ניהול אזורים",     path:"/admin/zones" },
   { Ico:IcoDoc,        label:"תנאי שימוש",       path:"/terms" },
   { Ico:IcoLock,       label:"מדיניות פרטיות",   path:"/privacy" },
 ];
@@ -122,7 +125,6 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
 
   // حالة التسجيل المتعدد الخطوات
   const [modal,      setModal]      = useState(null); // null | "phone" | "info" | "email" | "otp" | "password" | "login-pw"
-  const [showAuth,   setShowAuth]   = useState(false);
   const [phone,      setPhone]      = useState("");
   const [phoneErr,   setPhoneErr]   = useState("");
   const [phoneBusy,  setPhoneBusy]  = useState(false);
@@ -260,10 +262,10 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
     if (pass !== pass2) { setPassErr("הסיסמאות אינן תואמות"); return; }
     setPassBusy(true);
 
-    // نحفظ الرقم بصيغة موحدة — مع 0 في البداية
+    // FIX: always store canonical E.164 format (+972XXXXXXXXX) — same as AuthSystem
     const rawPhone = phone.replace(/\D/g,"");
     const stripped = rawPhone.replace(/^972/,"").replace(/^0/,"");
-    const normalPhone = "0" + stripped;
+    const normalPhone = "+972" + stripped; // E.164 canonical
 
     const meta = {
       firstName: regInfo.firstName.trim(),
@@ -278,20 +280,13 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
 
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      const strippedSave = meta.phone.replace(/^0/,"");
+      // FIX: single upsert with canonical E.164 phone — no more double write
       await supabase.from("users").upsert({
         id:    session.user.id,
         name:  meta.firstName+" "+meta.lastName,
-        phone: meta.phone,        // صيغة "0XX..."
+        phone: meta.phone,   // canonical "+972XXXXXXXXX"
         email: email.trim().toLowerCase(),
       });
-      // نحفظ الصيغة البديلة أيضاً لو ما انحفظت
-      await supabase.from("users").upsert({
-        id:    session.user.id,
-        name:  meta.firstName+" "+meta.lastName,
-        phone: strippedSave,      // صيغة بدون 0
-        email: email.trim().toLowerCase(),
-      }).then(() => {}).catch(() => {});
       onAuthDone?.({
         id:        session.user.id,
         email:     session.user.email,
@@ -361,7 +356,7 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
           ))}
         </div>
 
-        <Btn onClick={() => setShowAuth(true)}>
+        <Btn onClick={() => onLogin?.()}>
           📱 הירשם / התחבר
         </Btn>
       </div>
@@ -514,14 +509,9 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
 
       <BottomNav cartCount={cartCount}/>
 
-      {/* Auth Modal */}
-      {showAuth && (
-        <AuthSystem
-          onDone={(u) => { setShowAuth(false); onAuthDone?.(u); }}
-          onGuest={() => setShowAuth(false)}
-          onBusiness={() => setShowAuth(false)}
-        />
-      )}
+      {/* FIX: AuthSystem must NOT be rendered inside ProfilePage as a full-page overlay.
+          The guest view's "הירשם / התחבר" button now calls onLogin() which triggers
+          the AuthSystem at App.jsx level — correct z-index and DOM hierarchy. */}
     </div>
   );
 
@@ -563,9 +553,26 @@ export default function ProfilePage({ user, cartCount, onLogout, onUserUpdate, g
         </div>
 
         {!showLogout ? (
-          <button onClick={() => setShowLogout(true)} style={{ width:"100%", background:"white", color:"#EF4444", border:"2px solid #FEE2E2", borderRadius:16, padding:"14px", fontSize:14, fontWeight:800, cursor:"pointer", marginBottom:12 }}>
-            התנתקות
-          </button>
+          <>
+            {/* FIX: פורטל עסקים — shown only when logged in, replaces ניהול אזורים */}
+            <button onClick={() => navigate("/business")} style={{
+              width:"100%", background:DARK, color:"white", border:"none",
+              borderRadius:16, padding:"14px", fontSize:14, fontWeight:800,
+              cursor:"pointer", marginBottom:10,
+              display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  stroke="#F87171" strokeWidth="2" strokeLinecap="round"/>
+                <polyline points="9 22 9 12 15 12 15 22"
+                  stroke="#F87171" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              פורטל עסקים
+            </button>
+            <button onClick={() => setShowLogout(true)} style={{ width:"100%", background:"white", color:"#EF4444", border:"2px solid #FEE2E2", borderRadius:16, padding:"14px", fontSize:14, fontWeight:800, cursor:"pointer", marginBottom:12 }}>
+              התנתקות
+            </button>
+          </>
         ) : (
           <div style={{ background:"white", borderRadius:16, padding:"16px", marginBottom:12, boxShadow:"0 2px 10px rgba(0,0,0,0.07)", textAlign:"center" }}>
             <div style={{ fontWeight:700, fontSize:15, color:DARK, marginBottom:8 }}>בטוח שאתה רוצה להתנתק?</div>
