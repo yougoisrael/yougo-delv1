@@ -429,17 +429,18 @@ export default function AuthSheet({ open, onClose, onDone, onBusiness }) {
     if(Object.keys(errs).length){setFieldErrs(errs);return;}
     setError(""); setFieldErrs({}); setMode("submitting");
 
-    // check phone uniqueness
+    // CRITICAL FIX: RLS blocks direct table queries for anonymous users.
+    // Use RPC function that runs as SECURITY DEFINER (bypasses RLS safely).
     const {local,intl,intlNoPlus,raw} = normalizePhone(phone);
-    for(const v of [intl,local,intlNoPlus,raw]){
-      const {data:pd} = await supabase.from("users").select("id").eq("phone",v).maybeSingle();
-      if(pd){setMode("register");setFieldErrs({regPhone:"מספר הטלפון כבר רשום"});return;}
-    }
+    const {data:phoneCheck} = await supabase.rpc("check_phone_exists", {
+      p1: intl, p2: local, p3: intlNoPlus, p4: raw
+    });
+    if(phoneCheck){setMode("register");setFieldErrs({regPhone:"מספר הטלפון כבר רשום"});return;}
 
-    // check email uniqueness
+    // check email uniqueness via RPC too
     const emailFinal=regEmail.trim().toLowerCase();
-    const {data:ed} = await supabase.from("users").select("id").eq("email",emailFinal).maybeSingle();
-    if(ed){setMode("register");setFieldErrs({regEmail:"האימייל כבר רשום — נסה להתחבר"});return;}
+    const {data:emailCheck} = await supabase.rpc("check_email_exists", { em: emailFinal });
+    if(emailCheck){setMode("register");setFieldErrs({regEmail:"האימייל כבר רשום — נסה להתחבר"});return;}
 
     const meta={firstName:firstName.trim(),lastName:lastName.trim(),phone:intl,gender,age};
     const {data,error:e} = await supabase.auth.signUp({
@@ -452,6 +453,14 @@ export default function AuthSheet({ open, onClose, onDone, onBusiness }) {
         : "שגיאה: "+e.message);
       return;
     }
+
+    // CRITICAL FIX: if no session → email confirmation required
+    if(!data.session){
+      setMode("register");
+      setError("✉️ שלחנו לך אימייל אישור — אשר את הכתובת ואז התחבר");
+      return;
+    }
+
     if(data.user){
       await supabase.from("users").upsert({
         id:data.user.id, name:`${meta.firstName} ${meta.lastName}`,
