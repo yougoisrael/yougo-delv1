@@ -396,7 +396,7 @@ export default function MarketPage({ cartCount, user, selectedArea, onAreaSelect
   );
 
   return (
-    <div style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:"calc(80px + env(safe-area-inset-bottom, 0px))", paddingTop:160 }}>
+    <div style={{ fontFamily:"Arial,sans-serif", background:C.bg, minHeight:"100vh", maxWidth:430, margin:"0 auto", direction:"rtl", paddingBottom:"calc(80px + env(safe-area-inset-bottom, 0px))", paddingTop:100 }}>
 
       <Sidebar open={sidebarOpen} onClose={()=>setSidebarOpen(false)} user={user} navigate={navigate}/>
 
