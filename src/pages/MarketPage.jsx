@@ -371,15 +371,11 @@ export default function MarketPage({ cartCount, user, selectedArea, onAreaSelect
   }, []);
 
   useEffect(() => {
-    if (!selectedArea?.id) { setLoading(false); return; }
-    cachedQuery(
-      "market:" + selectedArea.id,
-      () => supabase.from("restaurants").select("*")
-        .eq("active", true).eq("page_type", "market")
-        .eq("zone_id", selectedArea.id),
+    cachedQuery("market:stores",
+      () => supabase.from("restaurants").select("*").eq("active",true).eq("page_type","market"),
       TTL.restaurants
     ).then(({ data }) => { setStores(data||[]); setLoading(false); });
-  }, [selectedArea?.id]);
+  }, []);
 
   const filtered = stores.filter(s => {
     if (searchQ) return s.name?.includes(searchQ)||s.category?.includes(searchQ);
